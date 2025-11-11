@@ -3,6 +3,12 @@ from typing import Sequence
 from dog.player import Player
 
 
+def render(state) -> None:
+  clear_screen()
+  print_board(state.board, state.players)
+  for player in state.players:
+    print_hand(player)
+
 def clear_screen() -> None:
   print("\033c", end="")
 
@@ -51,7 +57,24 @@ def cell_str(i, b, p):
     marble_index = p[player].get_marble(b.track[i])
     return p[player].color.value+marble_str[marble_index-1]+"\033[0m"
 
-def prompter(prompt: str, options: Sequence[str]) -> int:
+
+def select_action(state, options: Sequence[str]) -> int:
+  return prompter(state, "Select an action:", options)
+
+def prompter(state, prompt:str, options: Sequence[str]) -> int:
+  while True:
+    print(prompt)
+    for idx, option in enumerate(options):
+      print(f"  {idx + 1}: {option}")
+    choice = input("Select an option: ")
+    if choice.isdigit():
+      choice_idx = int(choice) - 1
+      if 0 <= choice_idx < len(options):
+        return choice_idx
+    error_print("Invalid choice. Please try again.")
+
+
+def old_prompter(prompt: str, options: Sequence[str]) -> int:
   while True:
     print(prompt)
     for idx, option in enumerate(options):

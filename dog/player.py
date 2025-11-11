@@ -40,7 +40,7 @@ class Player:
 
     def get_free_marble(self) -> Optional["Marble"]:
         for marble in self.marbles:
-            if not any(m is marble for m in self.marbles_in_play):
+            if marble not in self.marbles_in_play:
                 self.marbles_in_play.add(marble)
                 return marble
         return None

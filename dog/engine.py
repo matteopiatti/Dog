@@ -25,10 +25,11 @@ class Engine:
       board = Board(num_players=num_players)
       return GameState(players=players, board=board, deck=deck)
     
+    def step(state: GameState) -> GameState:
+      print("lol ")
+
     @staticmethod
     def start_game(state: GameState) -> GameState:  
-      print("Welcome to the Dog game!")
-      input("Press Enter to start the game...")
       while not state.finished:
         Engine.start_round(state)
       return state
@@ -41,10 +42,8 @@ class Engine:
         state.draw_size -= 1
       for player in state.players:
         player.receive_hand(state.deck.deal(state.draw_size))
-      clear_screen()
-      print_board(state.board, state.players)
-      Engine.start_turn(state)
-      input("Press Enter to continue...")
+      
+      state.phase = state.PHASE.TURN
 
     def start_turn(state: GameState) -> GameState:
       cp = state.players[state.current_player]
@@ -56,7 +55,6 @@ class Engine:
 
       if cp.hand == []:
         print(f"{cp.color.value}{cp.name} has no cards left. Skipping turn.\033[0m")
-        Engine.next_turn(state)
         return state
 
       print(f"\n{cp.color.value}{cp.name}'s turn:\033[0m")
@@ -67,13 +65,11 @@ class Engine:
         print("No legal moves available. Hand folded.")
         input("Press Enter to end turn...")
         cp.fold_hand()
-        Engine.next_turn(state)
         return state
 
       player_action = moves_prompter("Select a card to play:", actions, cp)
       print(f"You selected: {cp.hand[player_action.card_idx]}")
       move_action(state, player_action)
-      Engine.next_turn(state)
       return state
 
     def next_turn(state: GameState) -> GameState:
@@ -89,3 +85,7 @@ class Engine:
     
     def has_round_ended(state: GameState) -> bool:
       return all(player.hand == [] for player in state.players)
+    
+    def turn_has_ended(state: GameState) -> bool:
+      cp = state.players[state.current_player]
+      return cp.hand == []
