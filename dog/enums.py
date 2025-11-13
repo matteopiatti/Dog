@@ -28,3 +28,15 @@ class Colors(Enum):
   GREEN: str = "\033[92m"
   YELLOW: str = "\033[93m"
   BLUE: str = "\033[94m"
+
+class MoveKind(Enum):
+  MOVE = auto()
+  START = auto()
+  SPLIT = auto()
+  SWAP = auto()
+
+class GamePhase(Enum):
+  DEAL = auto()
+  TURN = auto()
+  PLAY = auto()
+  END = auto()

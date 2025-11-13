@@ -1,14 +1,14 @@
-from dog.engine import Engine
+from dog.engine import setup_game, step
 from dog.cli import render, select_action
-#from dog.board import legal_actions
 
 def main():
-  state = Engine.setup_game(4)
+  state = setup_game(4)
   # state = Engine.start_game(state)
   while not state.finished:
+    step(state)
     render(state)
-    # actions = legal_actions(state, state.current_player)
-    #action = select_action(state, ["do nothing"])
+    # print('Available actions:', actions)
+    # action = select_action(state, actions)
     # Engine.step(state)
 
 if __name__ == "__main__":

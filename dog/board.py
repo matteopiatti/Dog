@@ -3,28 +3,47 @@ from dog.marble import Marble
 
 class Board:
     NUM_FIELDS = 64
-    START_FIELDS = {
+    START_FIELD_NUMBERS = {
         0: 0,
         1: 16,
         2: 32,
         3: 48,
     }
 
-    def __init__(self, num_players:int):
-      self.track = [None] * self.NUM_FIELDS
-      self.home = {pid: [None] * 4 for pid in range(num_players)}
-      self.start_fields: dict[int, int] = {
-        self.START_FIELDS[pid]: pid for pid in range(num_players)
+    def __init__(self, players: list["Player"]):
+      self.track = [(None, None)] * self.NUM_FIELDS
+      self.home = {player: [None] * 4 for player in players}
+      self.start_fields: dict[Player, int] = {
+        player: self.START_FIELD_NUMBERS[idx] for idx, player in enumerate(players)
       }
       self.occupied_fields = set()
 
     def get_player_marbles(self, player: "Player"):
       marbles = []
-      for marble in self.track:
+      for marble, p in self.track:
         if marble is not None and marble.color == player.color:
           marbles.append(marble)
       return marbles
+    
+    def get_free_player_marble(self, player: "Player") -> Marble | None:
+      for marble in player.marbles:
+        if marble not in self.track:
+          return marble
+      return None
+
+    def player_marbles_in_play(self, state, player: "Player"):
+      marbles = []
+      for marble in player.marbles:
+        if any(m == marble for m, _ in state.board.track):
+          marbles.append(marble)
+      return marbles
         
+    def player_has_startable_marble(self, player: "Player") -> bool:
+      for marble in player.marbles:
+        if marble not in self.track and marble not in self.home[player]:
+          return True
+      return False
+
     # should be in move.py
     def start_marble(self, player_idx, player: "Player"):
       player_startfield = self.START_FIELDS[player_idx]
@@ -63,7 +82,7 @@ class Board:
           occupying_player.marbles_in_play.discard(occupying_marble)
         return True
     
-    # should be in rules.py
+    # IMPLEMENTED; should be in rules.py
     def is_valid_move(self, marble, step):
       if marble not in self.track:
           return False

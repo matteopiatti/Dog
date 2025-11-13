@@ -1,61 +1,39 @@
-import curses
-from pynput import keyboard
+from dog.enums import CardSuit
 
-def init_curses():
-    window = curses.initscr()
-    window.keypad(True)
-    curses.cbreak()
-    curses.noecho()
+def get_printable_card(card):
+    pre = ""
+    if card.suit in (CardSuit.HEARTS, CardSuit.DIAMONDS):
+      pre = "\033[91m"
+    elif card.suit in (CardSuit.CLUBS, CardSuit.SPADES):
+      pre = "\033[94m"
+    elif card.suit == CardSuit.NONE:
+      pre = "\033[93m"
+    return f"{pre}{card.rank.value}{card.suit.value}\033[0m"
 
-    # Initialize colors.
-    curses.start_color()
-    curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
-    curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLACK)
-    return window
+def middle_row(i, top):
+  c = " " * (len(top)*2-3)
+  if i in (0,1,2,3):
+    m = " " * (len(top)*2 - 7-i*4)
+    s = (2*i+1)*" "
+    c = f"{s}❂{m}❂{s}"
+  elif i in (11,12,13,14):
+    s = (2*(14 - i) +1)*" "
+    m = " " * (len(top)*2 - 7-(14-i)*4)
+    c = f"{s}❂{m}❂{s}"
+  elif i == 7:
+      c = "              DOG              "
+  return c
 
-def display_menu(window, menu_options):
-    selectedIndex = 0
-
-    while True:
-        window.clear()
-        window.addstr('Pick an option:\n', curses.A_UNDERLINE)
-
-        for i in range(len(menu_options)):
-            # Uncolored line number.
-            window.addstr('{}. '.format(i + 1))
-            # Colored menu option.
-            window.addstr(menu_options[i] + '\n', curses.color_pair(1) if i == selectedIndex else curses.color_pair(2))
-
-        c = window.getch()
-
-        if c == curses.KEY_UP or c == curses.KEY_LEFT:
-            # Loop around backwards.
-            selectedIndex = (selectedIndex - 1 + len(menu_options)) % len(menu_options)
-
-        elif c == curses.KEY_DOWN or c == curses.KEY_RIGHT:
-            # Loop around forwards.
-            selectedIndex = (selectedIndex + 1) % len(menu_options)
-
-        # If curses.nonl() is called, Enter key = \r else \n.
-        elif c == curses.KEY_ENTER or chr(c) in '\r\n':
-            return selectedIndex
-
-        else:
-            window.addstr("\nThe pressed key '{}' {} is not associated with a menu function.\n".format(chr(c), c))
-            window.getch()
-            
-
-class ListPrompt():
-    def __rich_console__(self, console, options):
-        yield "Hello"
-        yield "This is a test"
-        listener = keyboard.Listener(on_press=self.on_press)
-        listener.start()
-
-    def on_press(self, key):
-        try:
-            print('alphanumeric key {0} pressed'.format(
-                key.char))
-        except AttributeError:
-            print('special key {0} pressed'.format(
-                key))
+def cell_str(state, i):
+  if state.board.track[i] == (None, None):
+    if i in state.board.start_fields.values():
+      color = next(pl.color.value for pl, sf in state.board.start_fields.items() if sf == i)
+      return color + "◯" + "\033[0m"
+    return "."
+  else:
+    marble, player = state.board.track[i]
+    marble_str = ["❶", "❷", "❸", "❹"][player.marbles.index(marble)]
+    return marble.color.value + marble_str + "\033[0m"
+  
+def print_action_line(idx,card, marble, steps):
+  print(f"\033[{idx+2};50H  {idx + 1}: {card} - {marble} - {steps}")

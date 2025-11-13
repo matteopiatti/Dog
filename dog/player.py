@@ -3,19 +3,13 @@ from typing import List, Iterable, Optional, Set
 from .cards import Card
 from .marble import Marble
 
-@dataclass
+@dataclass(eq=False)
 class Player:
     name: str
-    # marbles should be defined by id so that we can distinguish them
-    marbles: List["Marble"]
+    marbles: List[int]
     hand: List["Card"] = field(default_factory=list)
     # could technically be derived from marbles + board state
     marbles_in_play: Set["Marble"] = field(default_factory=set)
-
-    def __str__(self) -> str:
-        cards_str = ", ".join(str(c) for c in self.hand)
-        marbles_str = ", ".join(str(m) for m in self.marbles)
-        return f"Player({self.name}, hand=[{cards_str}], marbles=[{marbles_str}])"
 
     @property
     def color(self):
@@ -34,14 +28,14 @@ class Player:
     def fold_hand(self) -> None:
         self.hand.clear()
 
-    # should be in board.py
+    # IMPLEMENTED as in not needed
     def get_marble(self, marble: "Marble") -> Optional[int]:
         for i, m in enumerate(self.marbles):
             if m is marble:
                 return i + 1
         return None
 
-    # should be in board.py
+    # IMPLEMENTED; should be in board.py
     def get_free_marble(self) -> Optional["Marble"]:
         for marble in self.marbles:
             if marble not in self.marbles_in_play:

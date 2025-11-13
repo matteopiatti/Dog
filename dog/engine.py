@@ -4,17 +4,12 @@ from .cards import Deck
 from .player import Player
 from .marble import Marble
 from .enums import Colors
-from .cli import clear_screen, print_board, print_hand, prompter, moves_prompter
-from .move import generate_moves, move_action
+from .cli import clear_screen, print_board, print_hand, print_no_actions, select_action
+from .enums import GamePhase
+from dog.rules import legal_actions
+from .move import start_action
 
-# engine should not handle any I/O. Move all print statements to cli or main.
-# engine should not be a class
-class Engine:
-    def __init__(self):
-        pass
-    
-    @staticmethod
-    def setup_game(num_players: int) -> GameState:
+def setup_game(num_players: int) -> GameState:
       deck = Deck()
       deck.shuffle()
       players = [
@@ -24,12 +19,45 @@ class Engine:
           )
           for color in list(Colors)[:num_players]
       ]
-      board = Board(num_players=num_players)
-      return GameState(players=players, board=board, deck=deck)
-    
-    # each turn is a step
-    def step(state: GameState) -> GameState:
-      print("lol ")
+      board = Board(players=players)
+      return GameState(players=players, board=board, deck=deck, current_player=players[0], last_started_player=players[0])
+
+def step(state: GameState) -> GameState:
+  if state.phase == GamePhase.DEAL:
+    deal_cards(state)
+    state.phase = GamePhase.TURN
+  elif state.phase == GamePhase.TURN:
+    legal_actions(state)
+    if not state.cp_actions:
+      print_no_actions()
+      state.current_player = state.next_player
+    else:
+      state.phase = GamePhase.PLAY
+  elif state.phase == GamePhase.PLAY:
+    action = select_action(state)
+    start_action(state, action)
+    state.current_player.play_card(action.card)
+    state.cp_actions.clear()
+    state.current_player = state.next_player
+    state.phase = GamePhase.TURN
+    input("Press Enter to continue...")
+
+def deal_cards(state: GameState) -> GameState:
+  if state.draw_size <= 1:
+    state.draw_size = 6
+    state.current_player = state.next_player
+    state.last_started_player = state.next_player
+  else:
+    state.draw_size -= 1
+  for player in state.players:
+    player.receive_hand(state.deck.deal(state.draw_size))
+
+
+# engine should not handle any I/O. Move all print statements to cli or main.
+# engine should not be a class
+class Engine:
+    def __init__(self):
+        pass
 
     @staticmethod
     # should be in main

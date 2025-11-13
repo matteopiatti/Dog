@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 from .cards import Deck, Card
 from .player import Player
 from .board import Board
+from .enums import GamePhase
+from .move import Action
 
 @dataclass
 class GameState:
@@ -11,6 +13,13 @@ class GameState:
   deck: "Deck"
   discard_pile: list["Card"] = field(default_factory=list)
   draw_size: int = 0
-  current_player: int = 0
+  current_player: Player = None
+  last_started_player: Player = None
   finished: bool = False
-  winner: int | None = None
+  winner: Player | None = None
+  phase: GamePhase = GamePhase.DEAL
+  cp_actions: list["Action"] = field(default_factory=list)
+
+  @property
+  def next_player(self):
+    return self.players[(self.players.index(self.current_player) + 1) % len(self.players)]
