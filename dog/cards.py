@@ -6,6 +6,7 @@ class Card:
     self.rank = rank
     self.suit = suit
 
+  # cli should define this
   def __str__(self):
     pre = ""
     if self.suit in (CardSuit.HEARTS, CardSuit.DIAMONDS):

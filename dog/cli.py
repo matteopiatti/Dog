@@ -1,13 +1,44 @@
 from typing import Sequence
-
 from dog.player import Player
+from rich import print, box
+from rich.console import Console, Group
+from rich.panel import Panel
+from rich.columns import Columns
+from rich.layout import Layout
+from rich.text import Text
+from rich.table import Table
+from rich.prompt import Prompt
+from rich.align import Align
+from .cli_helpers import ListPrompt
 
+console = Console()
 
+# this should render whatever is the step. It should not contain game logic.
 def render(state) -> None:
-  clear_screen()
-  print_board(state.board, state.players)
-  for player in state.players:
-    print_hand(player)
+  board_str = create_board_string(state.board, state.players)
+  with console.screen():
+    OPTIONS = ["Option 1", "Option 2", "Option 3"]
+    h = console.size.height
+    target = int(h * 0.99)
+    layout = Layout()
+    layout.split_row(
+      Layout(name="Game"),
+      Layout(name="Action", ratio=2),
+    )
+    layout["Game"].split_column(
+      Layout(name="Board", ratio=3),
+      Layout(name="Hand"),
+    )
+    # add text to layout Board
+
+    layout["Game"]["Board"].update(Panel("board_str", title="Board"))
+    layout["Action"].update(Panel(Align.center("table", vertical="middle"), title="Action"))
+    console.print(layout, height=target)
+    input("Press Enter to continue...")
+  # clear_screen()
+  # print_board(state.board, state.players)
+  # for player in state.players:
+  #   print_hand(player)
 
 def clear_screen() -> None:
   print("\033c", end="")
@@ -18,6 +49,7 @@ def error_print(msg: str) -> None:
 
 def print_hand(player) -> str:
   print("" + ", ".join(f"{card}" for idx, card in enumerate(player.hand)))
+
 
 def print_board(board, players) -> None:
   top = [cell_str(i, board, players) for i in range(0, 17)][::-1]
@@ -31,6 +63,21 @@ def print_board(board, players) -> None:
     r = right[i]
     print(f"{l}{middle_row(i, top)}{r}")
   print(" ".join(bottom))
+
+def create_board_string(board, players) -> str:
+  board_string = ""
+  top = [cell_str(i, board, players) for i in range(0, 17)][::-1]
+  left = [cell_str(i, board, players) for i in range(17, 32)]
+  bottom = [cell_str(i, board, players) for i in range(32, 49)]
+  right = [cell_str(i, board, players) for i in range(49, 64)][::-1]
+                                                  
+  board_string += " ".join(top) + "\n"
+  for i in range(15):
+    l = left[i]
+    r = right[i]
+    board_string += f"{l}{middle_row(i, top)}{r}\n"
+  board_string += " ".join(bottom)
+  return board_string
 
 def middle_row(i, top):
   c = " " * (len(top)*2-3)
@@ -57,7 +104,7 @@ def cell_str(i, b, p):
     marble_index = p[player].get_marble(b.track[i])
     return p[player].color.value+marble_str[marble_index-1]+"\033[0m"
 
-
+# prompter should also be usable by bots and not contain any game logic.
 def select_action(state, options: Sequence[str]) -> int:
   return prompter(state, "Select an action:", options)
 

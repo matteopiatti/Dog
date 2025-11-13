@@ -4,7 +4,6 @@ from .cards import Deck, Card
 from .player import Player
 from .board import Board
 
-
 @dataclass
 class GameState:
   players: Sequence[Player]

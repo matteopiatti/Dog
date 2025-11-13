@@ -7,6 +7,7 @@ from dog.state import GameState
 from dog.player import Player
 from dog.marble import Marble
 
+# move to enums.py
 class MoveKind(Enum):
     MOVE = auto()
     START = auto()
@@ -22,7 +23,7 @@ class Action:
     marble: "Marble"
     steps: int | None
   
-
+# some part of this generate_moves ought to be in rules.py
 def generate_moves(state: "GameState", current_player: "Player", card: "Card") -> list["Action"]:
   actions = []
   player_marbles = state.board.get_player_marbles(current_player)
@@ -83,6 +84,7 @@ def generate_moves(state: "GameState", current_player: "Player", card: "Card") -
           )
   return actions
 
+# here move action calls the board but should actually do the whole move
 def move_action(state: "GameState", action: "Action") -> "GameState":
   player = state.players[action.player_idx]
   card = player.hand[action.card_idx]

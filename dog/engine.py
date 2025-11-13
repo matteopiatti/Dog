@@ -7,6 +7,8 @@ from .enums import Colors
 from .cli import clear_screen, print_board, print_hand, prompter, moves_prompter
 from .move import generate_moves, move_action
 
+# engine should not handle any I/O. Move all print statements to cli or main.
+# engine should not be a class
 class Engine:
     def __init__(self):
         pass
@@ -25,16 +27,19 @@ class Engine:
       board = Board(num_players=num_players)
       return GameState(players=players, board=board, deck=deck)
     
+    # each turn is a step
     def step(state: GameState) -> GameState:
       print("lol ")
 
     @staticmethod
+    # should be in main
     def start_game(state: GameState) -> GameState:  
       while not state.finished:
         Engine.start_round(state)
       return state
     
     @staticmethod
+    # should be inside step
     def start_round(state: GameState) -> GameState:
       if state.draw_size <= 1:
         state.draw_size = 6
@@ -45,6 +50,7 @@ class Engine:
       
       state.phase = state.PHASE.TURN
 
+    # should be inside step
     def start_turn(state: GameState) -> GameState:
       cp = state.players[state.current_player]
 
@@ -72,6 +78,7 @@ class Engine:
       move_action(state, player_action)
       return state
 
+    # should be inside step
     def next_turn(state: GameState) -> GameState:
       state.current_player = (state.current_player + 1) % len(state.players)
       clear_screen()
@@ -80,12 +87,15 @@ class Engine:
       return state
     
     @staticmethod
+    # nope
     def new_round(state: GameState) -> GameState:
       return state
     
+    # state should know that
     def has_round_ended(state: GameState) -> bool:
       return all(player.hand == [] for player in state.players)
     
+    # also state should know that
     def turn_has_ended(state: GameState) -> bool:
       cp = state.players[state.current_player]
       return cp.hand == []

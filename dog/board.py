@@ -25,6 +25,7 @@ class Board:
           marbles.append(marble)
       return marbles
         
+    # should be in move.py
     def start_marble(self, player_idx, player: "Player"):
       player_startfield = self.START_FIELDS[player_idx]
       marble = player.get_free_marble()
@@ -34,6 +35,7 @@ class Board:
           self.occupied_fields.add(player_startfield)
           return True
       
+    # should be in move.py
     def move_marble(self, player: "Player", marble: "Marble", steps: int, players: list["Player"]):
       if marble not in player.marbles_in_play:
           return False
@@ -61,6 +63,7 @@ class Board:
           occupying_player.marbles_in_play.discard(occupying_marble)
         return True
     
+    # should be in rules.py
     def is_valid_move(self, marble, step):
       if marble not in self.track:
           return False

@@ -6,8 +6,10 @@ from .marble import Marble
 @dataclass
 class Player:
     name: str
+    # marbles should be defined by id so that we can distinguish them
     marbles: List["Marble"]
     hand: List["Card"] = field(default_factory=list)
+    # could technically be derived from marbles + board state
     marbles_in_play: Set["Marble"] = field(default_factory=set)
 
     def __str__(self) -> str:
@@ -32,12 +34,14 @@ class Player:
     def fold_hand(self) -> None:
         self.hand.clear()
 
+    # should be in board.py
     def get_marble(self, marble: "Marble") -> Optional[int]:
         for i, m in enumerate(self.marbles):
             if m is marble:
                 return i + 1
         return None
 
+    # should be in board.py
     def get_free_marble(self) -> Optional["Marble"]:
         for marble in self.marbles:
             if marble not in self.marbles_in_play:
