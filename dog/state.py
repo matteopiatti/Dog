@@ -5,24 +5,45 @@ from .objects import Player, Action
 from .board import Board
 from .enums import GamePhase
 
+
 @dataclass
 class GameState:
-  players: Sequence[Player]
-  board: "Board"
-  deck: "Deck"
-  discard_pile: list["Card"] = field(default_factory=list)
-  draw_size: int = 0
-  current_player: Player = None
-  last_started_player: Player = None
-  finished: bool = False
-  winner: Player | None = None
-  phase: GamePhase = GamePhase.DEAL
-  cp_actions: list["Action"] = field(default_factory=list)
+    players: Sequence[Player]
+    board: "Board"
+    deck: "Deck"
+    discard_pile: list["Card"] = field(default_factory=list)
+    draw_size: int = 0
+    current_player: Player = None
+    last_started_player: Player = None
+    finished: bool = False
+    winner: Player | None = None
+    phase: GamePhase = GamePhase.DEAL
+    cp_actions: list["Action"] = field(default_factory=list)
 
-  @property
-  def next_player(self):
-    return self.players[(self.players.index(self.current_player) + 1) % len(self.players)]
-  
-  @property
-  def empty_hands(self):
-    return all(len(player.hand) == 0 for player in self.players)
+    @property
+    def next_player(self):
+        return self.players[
+            (self.players.index(self.current_player) + 1) % len(self.players)
+        ]
+
+    @property
+    def empty_hands(self):
+        return all(len(player.hand) == 0 for player in self.players)
+
+    def advance_player(self):
+        self.current_player = self.next_player
+
+    def reset_actions(self):
+        self.cp_actions.clear()
+
+    def advance_turn(self):
+        if self.draw_size <= 1:
+            self.draw_size = 6
+            self.advance_round()
+        else:
+            self.draw_size -= 1
+
+    def advance_round(self):
+        self.advance_player()
+        self.reset_actions()
+        self.last_started_player = self.next_player
