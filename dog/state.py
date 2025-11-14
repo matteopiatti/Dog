@@ -1,10 +1,9 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from .cards import Deck, Card
-from .player import Player
+from .objects import Player, Action
 from .board import Board
 from .enums import GamePhase
-from .action import Action
 
 @dataclass
 class GameState:

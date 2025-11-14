@@ -1,8 +1,7 @@
 from .state import GameState
 from .board import Board
 from .cards import Deck
-from .player import Player
-from .marble import Marble
+from .objects import Player, Marble
 from .enums import Colors
 from .cli import print_no_actions, select_action
 from .enums import GamePhase

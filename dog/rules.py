@@ -1,4 +1,4 @@
-from .action import Action
+from .objects import Action
 from .enums import MoveKind
 
 def legal_actions(state):
@@ -88,9 +88,9 @@ def marble_allowed_steps(state, max_steps=7):
   if len(mip) == 1 and is_valid_move(state, mip[0], max_steps):
     return {mip[0]: [max_steps]}
   for m in mip:
-    current_pos = next(i for i, (mar, p) in enumerate(state.board.track) if mar is m)
+    marble_pos = state.board.pos_of_marble(m)
     for step in range(1, max_steps + 1):
-        intermediate_pos = (current_pos + step) % state.board.NUM_FIELDS
+        intermediate_pos = (marble_pos + step) % state.board.NUM_FIELDS
         if intermediate_pos in state.board.occupied_fields:
             break
         allowed_steps.setdefault(m, []).append(step)
@@ -114,15 +114,15 @@ def is_valid_move(state, marble, step):
   return True
 
 def is_valid_home_move(state, marble, player, step):
+  if step <= 0 or step > 3:
+      return False
   if all(m != marble for m in state.board.home[player]):
       return False
   current_pos = next(i for i, m in enumerate(state.board.home[player]) if m is marble)
   move_range = range(current_pos, min(current_pos + step, 3))
-  print(move_range)
-  input("debug")
   for pos in move_range:
       if state.board.home[player][pos] is not None:
           return False
-  if current_pos + step >= 4:
+  if current_pos + step > len(state.board.home[player]) - current_pos:
       return False
   return True

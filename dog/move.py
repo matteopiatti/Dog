@@ -35,35 +35,35 @@ def start_marble(state):
       return True
 
 def move_marble(state, marble, steps):
-  current_pos = next(i for i, (m, p) in enumerate(state.board.track) if m is marble)
-  new_pos = (current_pos + steps) % state.board.NUM_FIELDS
+  marble_pos = state.board.pos_of_marble(marble)
+  new_pos = (marble_pos + steps) % state.board.NUM_FIELDS
   startfield = state.board.start_fields[state.current_player]
 
   if state.board.marble_can_move_home(marble, state.current_player, steps):
-    state.board.track[current_pos] = (None, None)
+    state.board.track[marble_pos] = (None, None)
     home_slots = state.board.home[state.current_player]
-    distance_to_start = (startfield - current_pos) % state.board.NUM_FIELDS
+    distance_to_start = (startfield - marble_pos) % state.board.NUM_FIELDS
     home_slots[steps-distance_to_start - 1] = marble
     if state.phase == GamePhase.SPLIT:
-      move_range = [(current_pos + i) % state.board.NUM_FIELDS for i in range(1, steps + 1)]
+      move_range = [(marble_pos + i) % state.board.NUM_FIELDS for i in range(1, steps + 1)]
       for pos in move_range:
         state.board.track[pos] = (None, None)
     return True
 
-  if current_pos in state.board.start_fields.values():
-    state.board.occupied_fields.discard(current_pos)
+  if marble_pos in state.board.start_fields.values():
+    state.board.occupied_fields.discard(marble_pos)
 
   if state.phase == GamePhase.SPLIT:
-    move_range = [(current_pos + i) % state.board.NUM_FIELDS for i in range(1, steps + 1)]
+    move_range = [(marble_pos + i) % state.board.NUM_FIELDS for i in range(1, steps + 1)]
     for pos in move_range:
       state.board.track[pos] = (None, None)
 
   if state.board.track[new_pos] is (None, None):
-    state.board.track[current_pos] = (None, None)
+    state.board.track[marble_pos] = (None, None)
     state.board.track[new_pos] = (marble, state.current_player)
     return True
   else:
-    state.board.track[current_pos] = (None, None)
+    state.board.track[marble_pos] = (None, None)
     state.board.track[new_pos] = (marble, state.current_player)
     return True
   

@@ -1,7 +1,11 @@
 from dataclasses import dataclass, field
 from typing import List, Iterable, Optional, Set
 from .cards import Card
-from .marble import Marble
+from .enums import Colors, MoveKind
+
+@dataclass(eq=False, frozen=True)
+class Marble:
+    color: Colors
 
 @dataclass(eq=False)
 class Player:
@@ -27,3 +31,13 @@ class Player:
 
     def fold(self) -> None:
         self.hand.clear()
+
+@dataclass
+class Action:
+    player: Player
+    card: Card
+    kind: MoveKind
+    marble: Marble
+    swap_marble: Marble | None
+    swap_player: Player | None
+    steps: int | None

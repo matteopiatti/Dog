@@ -1,5 +1,4 @@
-from dog.player import Player
-from dog.marble import Marble
+from dog.objects import Marble, Player
 
 class Board:
     NUM_FIELDS = 64
@@ -17,16 +16,19 @@ class Board:
         player: self.START_FIELD_NUMBERS[idx] for idx, player in enumerate(players)
       }
       self.occupied_fields = set()
-      # self.home[players[0]][3] = Marble(players[0].color)  # For testing purposes
-      # self.home[players[1]][2] = Marble(players[1].color)  # For testing purposes
-      # self.home[players[2]][1] = Marble(players[2].color)  # For testing purposes
-      # self.home[players[3]][0] = Marble(players[3].color)  # For testing purposes
-    
+
+    def pos_of_marble(self, marble: Marble) -> int | None:
+      for i, (m, p) in enumerate(self.track):
+        if m is marble:
+          return i
+      return None
+
+    # recheck and rename all below methods
     def marble_can_move_home(self, marble: Marble, player: "Player", steps) -> bool:
       startfield = self.start_fields[player]
       if startfield in self.occupied_fields:
         return False
-      pos = next(i for i, (m, p) in enumerate(self.track) if m is marble)
+      pos = self.pos_of_marble(marble)
       distance_to_start = (startfield - pos) % self.NUM_FIELDS
       distance_to_first_marble = next((i for i, v in enumerate(self.home[player]) if v is not None), 4)
       return steps <= distance_to_start + distance_to_first_marble and steps > distance_to_start

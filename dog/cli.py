@@ -1,6 +1,6 @@
 from .cli_helpers import get_printable_card, middle_row, cell_str, print_action_line, get_printable_marble, print_action_selection_line
 from .enums import GamePhase
-from .action import Action
+from .objects import Action
 
 def render(state) -> None:
   clear_screen()
