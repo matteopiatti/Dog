@@ -25,20 +25,5 @@ class Player:
             return None
         return card
 
-    def fold_hand(self) -> None:
+    def fold(self) -> None:
         self.hand.clear()
-
-    # IMPLEMENTED as in not needed
-    def get_marble(self, marble: "Marble") -> Optional[int]:
-        for i, m in enumerate(self.marbles):
-            if m is marble:
-                return i + 1
-        return None
-
-    # IMPLEMENTED; should be in board.py
-    def get_free_marble(self) -> Optional["Marble"]:
-        for marble in self.marbles:
-            if marble not in self.marbles_in_play:
-                self.marbles_in_play.add(marble)
-                return marble
-        return None

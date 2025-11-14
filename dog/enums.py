@@ -34,9 +34,11 @@ class MoveKind(Enum):
   START = auto()
   SPLIT = auto()
   SWAP = auto()
+  HOME = auto()
 
 class GamePhase(Enum):
   DEAL = auto()
   TURN = auto()
   PLAY = auto()
+  SPLIT = auto()
   END = auto()

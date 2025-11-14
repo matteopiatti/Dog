@@ -1,29 +1,31 @@
-from dataclasses import dataclass
-from dog.cards import Card
-from dog.player import Player
-from dog.marble import Marble
-from .enums import MoveKind
-
-# action doesn't need move kind if we have movekind on each Card
-@dataclass
-class Action:
-    # player_idx: int
-    # card_idx: int
-    player: Player
-    card: Card
-    kind: MoveKind
-    marble: Marble
-    steps: int | None
+from .enums import GamePhase, MoveKind
+from .rules import marble_allowed_steps
+from .cli import select_split_action, render
 
 def start_action(state, action):
   if action.kind == MoveKind.START:
     start_marble(state)
   elif action.kind == MoveKind.MOVE:
-    # move marble
-    print("Moving marble...")
+    move_marble(state, action.marble, action.steps)
+  elif action.kind == MoveKind.SWAP:
+    swap_marbles(state, action.marble, action.swap_marble)
+  elif action.kind == MoveKind.SPLIT:
+    state.phase = GamePhase.SPLIT
+    steps = 7
+    while steps > 0:
+      render(state)
+      allowed_steps = marble_allowed_steps(state, steps)
+      m, s = select_split_action(action, allowed_steps)
+      print(f"Selected marble: {m}, steps: {s}")
+      move_marble(state, m, s)
+      steps -= s
   
-  ## implement 7, split move and jack, swap move
-  
+def swap_marbles(state, marble1, marble2):
+  pos1 = next(i for i, (m, p) in enumerate(state.board.track) if m is marble1)
+  pos2 = next(i for i, (m, p) in enumerate(state.board.track) if m is marble2)
+
+  state.board.track[pos1], state.board.track[pos2] = state.board.track[pos2], state.board.track[pos1]
+
 def start_marble(state):
   startfield = state.board.start_fields[state.current_player]
   marble = state.board.get_free_player_marble(state.current_player)
@@ -31,78 +33,37 @@ def start_marble(state):
       state.board.track[startfield] = (marble, state.current_player)
       state.board.occupied_fields.add(startfield)
       return True
+
+def move_marble(state, marble, steps):
+  current_pos = next(i for i, (m, p) in enumerate(state.board.track) if m is marble)
+  new_pos = (current_pos + steps) % state.board.NUM_FIELDS
+  startfield = state.board.start_fields[state.current_player]
+
+  if state.board.marble_can_move_home(marble, state.current_player, steps):
+    state.board.track[current_pos] = (None, None)
+    home_slots = state.board.home[state.current_player]
+    distance_to_start = (startfield - current_pos) % state.board.NUM_FIELDS
+    home_slots[steps-distance_to_start - 1] = marble
+    if state.phase == GamePhase.SPLIT:
+      move_range = [(current_pos + i) % state.board.NUM_FIELDS for i in range(1, steps + 1)]
+      for pos in move_range:
+        state.board.track[pos] = (None, None)
+    return True
+
+  if current_pos in state.board.start_fields.values():
+    state.board.occupied_fields.discard(current_pos)
+
+  if state.phase == GamePhase.SPLIT:
+    move_range = [(current_pos + i) % state.board.NUM_FIELDS for i in range(1, steps + 1)]
+    for pos in move_range:
+      state.board.track[pos] = (None, None)
+
+  if state.board.track[new_pos] is (None, None):
+    state.board.track[current_pos] = (None, None)
+    state.board.track[new_pos] = (marble, state.current_player)
+    return True
+  else:
+    state.board.track[current_pos] = (None, None)
+    state.board.track[new_pos] = (marble, state.current_player)
+    return True
   
-# some part of this generate_moves ought to be in rules.py
-# def generate_moves(state: "GameState", current_player: "Player", card: "Card") -> list["Action"]:
-#   actions = []
-#   player_marbles = state.board.get_player_marbles(current_player)
-
-#   for card in current_player.hand:
-#     if card.rank in [CardType.ACE, CardType.KING, CardType.JOKER]:
-#       if len(current_player.marbles_in_play) < 4 and state.board.home[state.current_player].count(None) > 0:
-#         actions.append(
-#             Action(
-#                 player_idx=state.players.index(current_player),
-#                 card_idx=current_player.hand.index(card),
-#                 card=card,
-#                 kind=MoveKind.START,
-#                 marble=None,
-#                 steps=None,
-#             )
-#         )
-#     for marble in player_marbles:
-#       steps = []
-#       if card.rank == CardType.ACE:
-#         steps = [1, 11]
-#       elif card.rank == CardType.KING:
-#         steps = [13]
-#       elif card.rank == CardType.QUEEN:
-#         steps = [12]
-#       elif card.rank == CardType.TEN:
-#         steps = [10]
-#       elif card.rank == CardType.NINE:
-#         steps = [9]
-#       elif card.rank == CardType.EIGHT:
-#         steps = [8]
-#       elif card.rank == CardType.SEVEN:
-#         steps = [7]
-#       elif card.rank == CardType.SIX:
-#         steps = [6]
-#       elif card.rank == CardType.FIVE:
-#         steps = [5]
-#       elif card.rank == CardType.FOUR:
-#         steps = [4, -4]
-#       elif card.rank == CardType.THREE:
-#         steps = [3]
-#       elif card.rank == CardType.TWO:
-#         steps = [2]
-#       elif card.rank == CardType.JOKER:
-#         steps = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
-      
-#       for step in steps:
-#         if state.board.is_valid_move(marble, step):
-#           actions.append(
-#               Action(
-#                   player_idx=state.players.index(current_player),
-#                   card_idx=current_player.hand.index(card),
-#                   card=card,
-#                   kind=MoveKind.MOVE,
-#                   marble=marble,
-#                   steps=step,
-#               )
-#           )
-#   return actions
-
-# # here move action calls the board but should actually do the whole move
-# def move_action(state: "GameState", action: "Action") -> "GameState":
-#   player = state.players[action.player_idx]
-#   card = player.hand[action.card_idx]
-
-#   if action.kind == MoveKind.START:
-#     state.board.start_marble(action.player_idx, player)
-#     player.play_card(card)
-#   elif action.kind == MoveKind.MOVE:
-#     state.board.move_marble(player, action.marble, action.steps, state.players)
-#     player.play_card(card)
-
-#   return state

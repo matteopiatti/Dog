@@ -77,4 +77,4 @@ def give_card_steps(card: Card) -> None:
     elif card.rank == CardType.TWO:
         card.steps = [2]
     elif card.rank == CardType.JOKER:
-        card.steps = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+        card.steps = [1, 2, 3, -4, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]

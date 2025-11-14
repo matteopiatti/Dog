@@ -4,7 +4,7 @@ from .cards import Deck, Card
 from .player import Player
 from .board import Board
 from .enums import GamePhase
-from .move import Action
+from .action import Action
 
 @dataclass
 class GameState:
@@ -23,3 +23,7 @@ class GameState:
   @property
   def next_player(self):
     return self.players[(self.players.index(self.current_player) + 1) % len(self.players)]
+  
+  @property
+  def empty_hands(self):
+    return all(len(player.hand) == 0 for player in self.players)

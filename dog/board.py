@@ -17,24 +17,30 @@ class Board:
         player: self.START_FIELD_NUMBERS[idx] for idx, player in enumerate(players)
       }
       self.occupied_fields = set()
-
-    def get_player_marbles(self, player: "Player"):
-      marbles = []
-      for marble, p in self.track:
-        if marble is not None and marble.color == player.color:
-          marbles.append(marble)
-      return marbles
+      # self.home[players[0]][3] = Marble(players[0].color)  # For testing purposes
+      # self.home[players[1]][2] = Marble(players[1].color)  # For testing purposes
+      # self.home[players[2]][1] = Marble(players[2].color)  # For testing purposes
+      # self.home[players[3]][0] = Marble(players[3].color)  # For testing purposes
     
+    def marble_can_move_home(self, marble: Marble, player: "Player", steps) -> bool:
+      startfield = self.start_fields[player]
+      if startfield in self.occupied_fields:
+        return False
+      pos = next(i for i, (m, p) in enumerate(self.track) if m is marble)
+      distance_to_start = (startfield - pos) % self.NUM_FIELDS
+      distance_to_first_marble = next((i for i, v in enumerate(self.home[player]) if v is not None), 4)
+      return steps <= distance_to_start + distance_to_first_marble and steps > distance_to_start
+
     def get_free_player_marble(self, player: "Player") -> Marble | None:
       for marble in player.marbles:
-        if marble not in self.track:
+        if marble not in self.player_marbles_in_play(player):
           return marble
       return None
 
-    def player_marbles_in_play(self, state, player: "Player"):
+    def player_marbles_in_play(self, player: "Player"):
       marbles = []
       for marble in player.marbles:
-        if any(m == marble for m, _ in state.board.track):
+        if any(m == marble for m, _ in self.track):
           marbles.append(marble)
       return marbles
         
@@ -43,52 +49,3 @@ class Board:
         if marble not in self.track and marble not in self.home[player]:
           return True
       return False
-
-    # should be in move.py
-    def start_marble(self, player_idx, player: "Player"):
-      player_startfield = self.START_FIELDS[player_idx]
-      marble = player.get_free_marble()
-      if marble and self.track[player_startfield] is None:
-          self.track[player_startfield] = marble
-          player.marbles_in_play.add(marble)
-          self.occupied_fields.add(player_startfield)
-          return True
-      
-    # should be in move.py
-    def move_marble(self, player: "Player", marble: "Marble", steps: int, players: list["Player"]):
-      if marble not in player.marbles_in_play:
-          return False
-
-      current_pos = next(i for i, m in enumerate(self.track) if m is marble)
-      new_pos = (current_pos + steps) % self.NUM_FIELDS
-
-      if current_pos in self.start_fields:
-          self.occupied_fields.discard(current_pos)
-
-      if self.track[new_pos] is None:
-          self.track[current_pos] = None
-          self.track[new_pos] = marble
-          return True
-      else:
-        occupying_marble = self.track[new_pos]
-        self.track[current_pos] = None
-        self.track[new_pos] = marble
-        occupying_player = None
-        for p in players:
-          if occupying_marble in p.marbles:
-            occupying_player = p
-            break
-        if occupying_player:
-          occupying_player.marbles_in_play.discard(occupying_marble)
-        return True
-    
-    # IMPLEMENTED; should be in rules.py
-    def is_valid_move(self, marble, step):
-      if marble not in self.track:
-          return False
-      current_pos = next(i for i, m in enumerate(self.track) if m is marble)
-      for s in range(1, abs(step)+1):
-          intermediate_pos = (current_pos + (s if step > 0 else -s)) % self.NUM_FIELDS
-          if intermediate_pos in self.occupied_fields:
-              return False
-      return True
