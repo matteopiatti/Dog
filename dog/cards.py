@@ -17,7 +17,7 @@ class Deck:
         jokers = [Card(CardType.JOKER, CardSuit.NONE, MoveKind.MOVE)] * 3
         self.cards = (base + jokers) * 2
         for card in self.cards:
-           give_card_move_kind(card)
+           card.kinds = MOVE_KINDS.get(card.rank, [MoveKind.MOVE])
            give_card_steps(card)
     else:
         self.cards = list(cards)
@@ -38,18 +38,19 @@ class Deck:
   def shuffle(self):
     random.shuffle(self.cards)
 
+MOVE_KINDS = {
+    CardType.ACE: [MoveKind.START, MoveKind.MOVE],
+    CardType.KING: [MoveKind.START, MoveKind.MOVE],
+    CardType.JOKER: [MoveKind.START, MoveKind.MOVE, MoveKind.SPLIT, MoveKind.SWAP],
+    CardType.SEVEN: [MoveKind.SPLIT],
+    CardType.JACK: [MoveKind.SWAP],
+}
 
-def give_card_move_kind(card: Card) -> None:
-    if card.rank in [CardType.ACE, CardType.KING]:
-        card.kinds = [MoveKind.START, MoveKind.MOVE]
-    elif card.rank == CardType.JOKER:
-        card.kinds = [MoveKind.START, MoveKind.MOVE, MoveKind.SPLIT, MoveKind.SWAP]
-    elif card.rank == CardType.SEVEN:
-        card.kinds = [MoveKind.SPLIT]
-    elif card.rank == CardType.JACK:
-        card.kinds = [MoveKind.SWAP]
-    else:
-        card.kinds = [MoveKind.MOVE]
+STEPS = {
+   CardType.ACE: [1, 11],
+    CardType.KING: [13],
+    CardType.QUEEN: [12],
+}
 
 def give_card_steps(card: Card) -> None:
     if card.rank == CardType.ACE:
