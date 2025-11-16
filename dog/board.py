@@ -16,7 +16,7 @@ class Board:
         self.start_fields: dict[Player, int] = {
             player: self.START_FIELD_NUMBERS[idx] for idx, player in enumerate(players)
         }
-        self.occupied_fields = set()
+        self.blocked_fields = set()
 
     def pos_of_marble(self, marble: Marble) -> int | None:
         for i, (m, p) in enumerate(self.track):
@@ -24,15 +24,23 @@ class Board:
                 return i
         return None
 
-    def pos_empty(self, pos: int) -> bool:
-        return self.track[pos] is (None, None)
+    def pos_of_home_marble(self, marble: Marble, player: "Player") -> int | None:
+        for i, m in enumerate(self.home[player]):
+            if m is marble:
+                return i
+        return None
 
-    # recheck and rename all below methods
+    def pos_empty(self, pos: int) -> bool:
+        m, _ = self.track[pos]
+        return m is None
+
     def marble_can_move_home(self, marble: Marble, player: "Player", steps) -> bool:
         startfield = self.start_fields[player]
-        if startfield in self.occupied_fields:
+        if startfield in self.blocked_fields:
             return False
         pos = self.pos_of_marble(marble)
+        if pos is None:
+            return False
         distance_to_start = (startfield - pos) % self.NUM_FIELDS
         distance_to_first_marble = next(
             (i for i, v in enumerate(self.home[player]) if v is not None), 4
@@ -43,20 +51,29 @@ class Board:
         )
 
     def get_free_player_marble(self, player: "Player") -> Marble | None:
+        in_play = self.player_marbles_in_play(player)
+        in_home = self.home[player]
         for marble in player.marbles:
-            if marble not in self.player_marbles_in_play(player):
+            if marble not in in_play and marble not in in_home:
                 return marble
         return None
 
     def player_marbles_in_play(self, player: "Player"):
-        marbles = []
-        for marble in player.marbles:
-            if any(m == marble for m, _ in self.track):
-                marbles.append(marble)
-        return marbles
+        return [m for (m, p) in self.track if p is player and m is not None]
 
     def player_has_startable_marble(self, player: "Player") -> bool:
-        for marble in player.marbles:
-            if marble not in self.track and marble not in self.home[player]:
-                return True
-        return False
+        if self.start_fields[player] in self.blocked_fields:
+            return False
+        return self.get_free_player_marble(player) is not None
+
+    def player_finished_marbles(self, player: "Player") -> int:
+        home = self.home[player]
+        n = len(home)
+        finished = 0
+
+        for i in range(n):
+            if home[i] is not None:
+                if all(slot is not None for slot in home[i + 1 :]):
+                    finished += 1
+
+        return finished

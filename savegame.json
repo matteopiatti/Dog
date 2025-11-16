@@ -1,0 +1,421 @@
+{
+  "players": [
+    {
+      "name": "Player Red",
+      "color": "RED"
+    },
+    {
+      "name": "Player Green",
+      "color": "GREEN"
+    },
+    {
+      "name": "Player Yellow",
+      "color": "YELLOW"
+    },
+    {
+      "name": "Player Blue",
+      "color": "BLUE"
+    }
+  ],
+  "track": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "player": 3,
+      "marble": 2
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "player": 2,
+      "marble": 2
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "player": 1,
+      "marble": 0
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "home": [
+    [
+      {
+        "player": 0,
+        "marble": 3
+      },
+      {
+        "player": 0,
+        "marble": 0
+      },
+      {
+        "player": 0,
+        "marble": 1
+      },
+      {
+        "player": 0,
+        "marble": 2
+      }
+    ],
+    [
+      null,
+      null,
+      {
+        "player": 1,
+        "marble": 2
+      },
+      null
+    ],
+    [
+      null,
+      {
+        "player": 2,
+        "marble": 3
+      },
+      {
+        "player": 2,
+        "marble": 1
+      },
+      {
+        "player": 2,
+        "marble": 0
+      }
+    ],
+    [
+      null,
+      null,
+      {
+        "player": 3,
+        "marble": 1
+      },
+      {
+        "player": 3,
+        "marble": 0
+      }
+    ]
+  ],
+  "hands": [
+    [
+      {
+        "rank": "EIGHT",
+        "suit": "HEARTS"
+      },
+      {
+        "rank": "FIVE",
+        "suit": "DIAMONDS"
+      },
+      {
+        "rank": "KING",
+        "suit": "CLUBS"
+      },
+      {
+        "rank": "KING",
+        "suit": "SPADES"
+      },
+      {
+        "rank": "SIX",
+        "suit": "SPADES"
+      },
+      {
+        "rank": "JACK",
+        "suit": "SPADES"
+      }
+    ],
+    [
+      {
+        "rank": "SIX",
+        "suit": "SPADES"
+      },
+      {
+        "rank": "EIGHT",
+        "suit": "SPADES"
+      },
+      {
+        "rank": "JOKER",
+        "suit": "NONE"
+      },
+      {
+        "rank": "TEN",
+        "suit": "DIAMONDS"
+      },
+      {
+        "rank": "JOKER",
+        "suit": "NONE"
+      },
+      {
+        "rank": "ACE",
+        "suit": "DIAMONDS"
+      }
+    ],
+    [
+      {
+        "rank": "NINE",
+        "suit": "DIAMONDS"
+      },
+      {
+        "rank": "SIX",
+        "suit": "CLUBS"
+      },
+      {
+        "rank": "JACK",
+        "suit": "SPADES"
+      },
+      {
+        "rank": "EIGHT",
+        "suit": "DIAMONDS"
+      },
+      {
+        "rank": "QUEEN",
+        "suit": "HEARTS"
+      },
+      {
+        "rank": "JOKER",
+        "suit": "NONE"
+      }
+    ],
+    [
+      {
+        "rank": "NINE",
+        "suit": "CLUBS"
+      },
+      {
+        "rank": "THREE",
+        "suit": "HEARTS"
+      },
+      {
+        "rank": "QUEEN",
+        "suit": "CLUBS"
+      },
+      {
+        "rank": "FOUR",
+        "suit": "HEARTS"
+      },
+      {
+        "rank": "THREE",
+        "suit": "DIAMONDS"
+      },
+      {
+        "rank": "JACK",
+        "suit": "HEARTS"
+      }
+    ]
+  ],
+  "deck": [
+    {
+      "rank": "JOKER",
+      "suit": "NONE"
+    },
+    {
+      "rank": "FIVE",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "NINE",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "FOUR",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "TEN",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "SEVEN",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "SEVEN",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "FOUR",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "ACE",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "KING",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "TWO",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "FIVE",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "THREE",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "ACE",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "FIVE",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "NINE",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "TEN",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "FIVE",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "QUEEN",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "ACE",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "ACE",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "NINE",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "EIGHT",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "JOKER",
+      "suit": "NONE"
+    },
+    {
+      "rank": "SEVEN",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "QUEEN",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "SIX",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "NINE",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "FIVE",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "TWO",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "FOUR",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "FOUR",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "SIX",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "KING",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "QUEEN",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "ACE",
+      "suit": "CLUBS"
+    }
+  ],
+  "discard": [],
+  "draw_size": 6,
+  "current_player": 2,
+  "last_started_player": 3,
+  "phase": "PLAY",
+  "num_rounds": 11,
+  "teams": [
+    [
+      0,
+      2
+    ],
+    [
+      1,
+      3
+    ]
+  ],
+  "switch_cards": [],
+  "winner": null
+}

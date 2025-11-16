@@ -1,0 +1,232 @@
+{
+  "players": [
+    {
+      "name": "Player Red",
+      "color": "RED"
+    },
+    {
+      "name": "Player Green",
+      "color": "GREEN"
+    },
+    {
+      "name": "Player Yellow",
+      "color": "YELLOW"
+    },
+    {
+      "name": "Player Blue",
+      "color": "BLUE"
+    }
+  ],
+  "track": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "player": 3,
+      "marble": 1
+    },
+    null,
+    null,
+    {
+      "player": 2,
+      "marble": 0
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "player": 0,
+      "marble": 0
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "player": 1,
+      "marble": 2
+    },
+    null,
+    null,
+    {
+      "player": 1,
+      "marble": 0
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "home": [
+    [
+      null,
+      null,
+      {
+        "player": 0,
+        "marble": 1
+      },
+      null
+    ],
+    [
+      null,
+      {
+        "player": 1,
+        "marble": 1
+      },
+      null,
+      null
+    ],
+    [
+      null,
+      null,
+      {
+        "player": 2,
+        "marble": 3
+      },
+      null
+    ],
+    [
+      null,
+      {
+        "player": 3,
+        "marble": 2
+      },
+      null,
+      {
+        "player": 3,
+        "marble": 0
+      }
+    ]
+  ],
+  "hands": [
+    [
+      {
+        "rank": "TWO",
+        "suit": "SPADES"
+      },
+      {
+        "rank": "SIX",
+        "suit": "CLUBS"
+      },
+      {
+        "rank": "KING",
+        "suit": "DIAMONDS"
+      }
+    ],
+    [
+      {
+        "rank": "THREE",
+        "suit": "HEARTS"
+      },
+      {
+        "rank": "SEVEN",
+        "suit": "HEARTS"
+      },
+      {
+        "rank": "TWO",
+        "suit": "SPADES"
+      }
+    ],
+    [
+      {
+        "rank": "SEVEN",
+        "suit": "SPADES"
+      },
+      {
+        "rank": "QUEEN",
+        "suit": "CLUBS"
+      },
+      {
+        "rank": "FOUR",
+        "suit": "HEARTS"
+      }
+    ],
+    [
+      {
+        "rank": "ACE",
+        "suit": "CLUBS"
+      },
+      {
+        "rank": "SIX",
+        "suit": "DIAMONDS"
+      },
+      {
+        "rank": "TEN",
+        "suit": "SPADES"
+      }
+    ]
+  ],
+  "deck": [
+    {
+      "rank": "NINE",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "TEN",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "TEN",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "NINE",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "SIX",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "FIVE",
+      "suit": "DIAMONDS"
+    }
+  ],
+  "discard": [],
+  "draw_size": 3,
+  "current_player": 2,
+  "last_started_player": 2,
+  "phase": "PLAY",
+  "num_rounds": 22
+}

@@ -1,0 +1,585 @@
+{
+  "players": [
+    {
+      "name": "Player Red",
+      "color": "RED"
+    },
+    {
+      "name": "Player Green",
+      "color": "GREEN"
+    },
+    {
+      "name": "Player Yellow",
+      "color": "YELLOW"
+    },
+    {
+      "name": "Player Blue",
+      "color": "BLUE"
+    }
+  ],
+  "track": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "player": 1,
+      "marble": 2
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "player": 1,
+      "marble": 0
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "player": 3,
+      "marble": 1
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "player": 2,
+      "marble": 0
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "player": 3,
+      "marble": 3
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "home": [
+    [
+      null,
+      {
+        "player": 0,
+        "marble": 0
+      },
+      null,
+      {
+        "player": 0,
+        "marble": 1
+      }
+    ],
+    [
+      null,
+      null,
+      null,
+      {
+        "player": 1,
+        "marble": 1
+      }
+    ],
+    [
+      null,
+      null,
+      null,
+      {
+        "player": 2,
+        "marble": 3
+      }
+    ],
+    [
+      null,
+      {
+        "player": 3,
+        "marble": 2
+      },
+      null,
+      {
+        "player": 3,
+        "marble": 0
+      }
+    ]
+  ],
+  "hands": [
+    [],
+    [],
+    [
+      {
+        "rank": "NINE",
+        "suit": "CLUBS"
+      }
+    ],
+    [
+      {
+        "rank": "JACK",
+        "suit": "CLUBS"
+      }
+    ]
+  ],
+  "deck": [
+    {
+      "rank": "TWO",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "EIGHT",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "THREE",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "JACK",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "SIX",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "NINE",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "EIGHT",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "SIX",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "THREE",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "TWO",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "SIX",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "JACK",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "QUEEN",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "QUEEN",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "THREE",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "JACK",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "KING",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "FIVE",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "KING",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "SEVEN",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "JOKER",
+      "suit": "NONE"
+    },
+    {
+      "rank": "ACE",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "JOKER",
+      "suit": "NONE"
+    },
+    {
+      "rank": "QUEEN",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "THREE",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "SEVEN",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "THREE",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "KING",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "SIX",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "ACE",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "JOKER",
+      "suit": "NONE"
+    },
+    {
+      "rank": "THREE",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "TWO",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "ACE",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "TEN",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "JACK",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "EIGHT",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "FOUR",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "FOUR",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "EIGHT",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "NINE",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "ACE",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "FOUR",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "EIGHT",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "TWO",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "SIX",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "ACE",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "SEVEN",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "FOUR",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "TEN",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "FIVE",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "NINE",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "JOKER",
+      "suit": "NONE"
+    },
+    {
+      "rank": "FOUR",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "ACE",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "JACK",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "ACE",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "KING",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "FIVE",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "TWO",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "NINE",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "THREE",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "JOKER",
+      "suit": "NONE"
+    },
+    {
+      "rank": "TWO",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "SEVEN",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "NINE",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "QUEEN",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "EIGHT",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "TEN",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "TWO",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "FIVE",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "EIGHT",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "JACK",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "QUEEN",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "NINE",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "NINE",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "TEN",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "EIGHT",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "QUEEN",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "TEN",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "QUEEN",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "FOUR",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "SIX",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "SEVEN",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "KING",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "THREE",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "FIVE",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "TEN",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "FOUR",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "SEVEN",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "ACE",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "JACK",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "SIX",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "KING",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "QUEEN",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "FOUR",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "FIVE",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "SEVEN",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "KING",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "SEVEN",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "TEN",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "TEN",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "FIVE",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "TWO",
+      "suit": "HEARTS"
+    }
+  ],
+  "discard": [],
+  "draw_size": 1,
+  "current_player": 2,
+  "last_started_player": 0,
+  "phase": "PLAY",
+  "num_rounds": 24
+}
