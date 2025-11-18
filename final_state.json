@@ -37,45 +37,45 @@
     null,
     null,
     null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
     {
       "player": 3,
-      "marble": 2
+      "marble": 0
     },
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    {
-      "player": 2,
-      "marble": 2
-    },
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
     null,
     null,
     null,
     null,
     {
       "player": 1,
-      "marble": 0
+      "marble": 2
     },
     null,
     null,
+    {
+      "player": 3,
+      "marble": 3
+    },
     null,
     null,
     null,
@@ -96,11 +96,11 @@
     [
       {
         "player": 0,
-        "marble": 3
+        "marble": 2
       },
       {
         "player": 0,
-        "marble": 0
+        "marble": 3
       },
       {
         "player": 0,
@@ -108,31 +108,37 @@
       },
       {
         "player": 0,
-        "marble": 2
+        "marble": 0
       }
     ],
     [
-      null,
       null,
       {
         "player": 1,
-        "marble": 2
+        "marble": 1
       },
-      null
+      null,
+      {
+        "player": 1,
+        "marble": 0
+      }
     ],
     [
-      null,
       {
         "player": 2,
         "marble": 3
       },
       {
         "player": 2,
-        "marble": 1
+        "marble": 0
       },
       {
         "player": 2,
-        "marble": 0
+        "marble": 2
+      },
+      {
+        "player": 2,
+        "marble": 1
       }
     ],
     [
@@ -140,97 +146,59 @@
       null,
       {
         "player": 3,
-        "marble": 1
+        "marble": 2
       },
       {
         "player": 3,
-        "marble": 0
+        "marble": 1
       }
     ]
   ],
   "hands": [
     [
       {
-        "rank": "EIGHT",
-        "suit": "HEARTS"
+        "rank": "FOUR",
+        "suit": "SPADES"
+      },
+      {
+        "rank": "FOUR",
+        "suit": "CLUBS"
       },
       {
         "rank": "FIVE",
-        "suit": "DIAMONDS"
-      },
-      {
-        "rank": "KING",
-        "suit": "CLUBS"
-      },
-      {
-        "rank": "KING",
         "suit": "SPADES"
-      },
-      {
-        "rank": "SIX",
-        "suit": "SPADES"
-      },
-      {
-        "rank": "JACK",
-        "suit": "SPADES"
-      }
-    ],
-    [
-      {
-        "rank": "SIX",
-        "suit": "SPADES"
-      },
-      {
-        "rank": "EIGHT",
-        "suit": "SPADES"
-      },
-      {
-        "rank": "JOKER",
-        "suit": "NONE"
-      },
-      {
-        "rank": "TEN",
-        "suit": "DIAMONDS"
-      },
-      {
-        "rank": "JOKER",
-        "suit": "NONE"
-      },
-      {
-        "rank": "ACE",
-        "suit": "DIAMONDS"
-      }
-    ],
-    [
-      {
-        "rank": "NINE",
-        "suit": "DIAMONDS"
-      },
-      {
-        "rank": "SIX",
-        "suit": "CLUBS"
-      },
-      {
-        "rank": "JACK",
-        "suit": "SPADES"
-      },
-      {
-        "rank": "EIGHT",
-        "suit": "DIAMONDS"
       },
       {
         "rank": "QUEEN",
-        "suit": "HEARTS"
-      },
-      {
-        "rank": "JOKER",
-        "suit": "NONE"
+        "suit": "CLUBS"
       }
     ],
     [
       {
-        "rank": "NINE",
+        "rank": "THREE",
+        "suit": "SPADES"
+      },
+      {
+        "rank": "EIGHT",
         "suit": "CLUBS"
+      },
+      {
+        "rank": "NINE",
+        "suit": "HEARTS"
+      },
+      {
+        "rank": "TEN",
+        "suit": "HEARTS"
+      },
+      {
+        "rank": "KING",
+        "suit": "DIAMONDS"
+      }
+    ],
+    [
+      {
+        "rank": "THREE",
+        "suit": "SPADES"
       },
       {
         "rank": "THREE",
@@ -238,50 +206,52 @@
       },
       {
         "rank": "QUEEN",
-        "suit": "CLUBS"
+        "suit": "SPADES"
+      },
+      {
+        "rank": "SEVEN",
+        "suit": "SPADES"
+      }
+    ],
+    [
+      {
+        "rank": "FIVE",
+        "suit": "HEARTS"
       },
       {
         "rank": "FOUR",
         "suit": "HEARTS"
       },
       {
-        "rank": "THREE",
-        "suit": "DIAMONDS"
+        "rank": "FIVE",
+        "suit": "SPADES"
       },
       {
-        "rank": "JACK",
-        "suit": "HEARTS"
+        "rank": "QUEEN",
+        "suit": "SPADES"
       }
     ]
   ],
   "deck": [
     {
-      "rank": "JOKER",
-      "suit": "NONE"
+      "rank": "EIGHT",
+      "suit": "SPADES"
     },
     {
-      "rank": "FIVE",
+      "rank": "NINE",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "SIX",
       "suit": "DIAMONDS"
     },
     {
       "rank": "NINE",
-      "suit": "SPADES"
+      "suit": "CLUBS"
     },
     {
-      "rank": "FOUR",
-      "suit": "SPADES"
-    },
-    {
-      "rank": "TEN",
+      "rank": "FIVE",
       "suit": "DIAMONDS"
-    },
-    {
-      "rank": "SEVEN",
-      "suit": "SPADES"
-    },
-    {
-      "rank": "SEVEN",
-      "suit": "SPADES"
     },
     {
       "rank": "FOUR",
@@ -292,60 +262,84 @@
       "suit": "SPADES"
     },
     {
-      "rank": "KING",
-      "suit": "SPADES"
-    },
-    {
       "rank": "TWO",
       "suit": "SPADES"
     },
     {
-      "rank": "FIVE",
+      "rank": "SEVEN",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "SIX",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "JOKER",
+      "suit": "NONE"
+    },
+    {
+      "rank": "KING",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "ACE",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "TWO",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "TEN",
+      "suit": "DIAMONDS"
+    },
+    {
+      "rank": "EIGHT",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "NINE",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "SIX",
+      "suit": "CLUBS"
+    },
+    {
+      "rank": "SIX",
       "suit": "HEARTS"
     },
     {
       "rank": "THREE",
-      "suit": "HEARTS"
+      "suit": "DIAMONDS"
     },
     {
-      "rank": "ACE",
-      "suit": "HEARTS"
-    },
-    {
-      "rank": "FIVE",
-      "suit": "HEARTS"
-    },
-    {
-      "rank": "NINE",
-      "suit": "HEARTS"
-    },
-    {
-      "rank": "TEN",
-      "suit": "CLUBS"
-    },
-    {
-      "rank": "FIVE",
+      "rank": "JACK",
       "suit": "CLUBS"
     },
     {
       "rank": "QUEEN",
-      "suit": "HEARTS"
-    },
-    {
-      "rank": "ACE",
       "suit": "DIAMONDS"
     },
     {
-      "rank": "ACE",
+      "rank": "FOUR",
       "suit": "HEARTS"
     },
     {
-      "rank": "NINE",
-      "suit": "CLUBS"
+      "rank": "SEVEN",
+      "suit": "DIAMONDS"
     },
     {
-      "rank": "EIGHT",
-      "suit": "CLUBS"
+      "rank": "JACK",
+      "suit": "SPADES"
+    },
+    {
+      "rank": "JACK",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "TEN",
+      "suit": "DIAMONDS"
     },
     {
       "rank": "JOKER",
@@ -353,58 +347,42 @@
     },
     {
       "rank": "SEVEN",
-      "suit": "HEARTS"
-    },
-    {
-      "rank": "QUEEN",
       "suit": "CLUBS"
     },
     {
       "rank": "SIX",
-      "suit": "DIAMONDS"
-    },
-    {
-      "rank": "NINE",
       "suit": "SPADES"
     },
     {
-      "rank": "FIVE",
-      "suit": "SPADES"
-    },
-    {
-      "rank": "TWO",
+      "rank": "QUEEN",
       "suit": "DIAMONDS"
     },
     {
-      "rank": "FOUR",
+      "rank": "EIGHT",
       "suit": "DIAMONDS"
-    },
-    {
-      "rank": "FOUR",
-      "suit": "HEARTS"
-    },
-    {
-      "rank": "SIX",
-      "suit": "HEARTS"
     },
     {
       "rank": "KING",
       "suit": "HEARTS"
     },
     {
-      "rank": "QUEEN",
+      "rank": "SIX",
+      "suit": "HEARTS"
+    },
+    {
+      "rank": "SEVEN",
       "suit": "SPADES"
     },
     {
-      "rank": "ACE",
-      "suit": "CLUBS"
+      "rank": "THREE",
+      "suit": "HEARTS"
     }
   ],
   "discard": [],
   "draw_size": 6,
-  "current_player": 2,
+  "current_player": 1,
   "last_started_player": 3,
-  "phase": "PLAY",
+  "phase": "TURN",
   "num_rounds": 11,
   "teams": [
     [
@@ -417,5 +395,8 @@
     ]
   ],
   "switch_cards": [],
-  "winner": null
+  "winner": [
+    0,
+    2
+  ]
 }

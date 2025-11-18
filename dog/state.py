@@ -1,9 +1,11 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from agent.agent import Agent
 from .cards import Deck, Card
 from .objects import Player, Action
 from .board import Board
 from .enums import GamePhase
+from copy import deepcopy
 
 
 @dataclass
@@ -23,6 +25,7 @@ class GameState:
     switch_cards = []
     num_rounds: int = 0
     winner: tuple[Player, Player] | None = None
+    agents: dict[Player, Agent] = field(default_factory=dict)
 
     @property
     def next_player(self):
@@ -72,3 +75,6 @@ class GameState:
                 self.winner = team
                 return team
         return None
+
+    def clone(self):
+        return deepcopy(self)

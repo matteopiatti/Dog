@@ -77,9 +77,6 @@ def is_valid_split(state):
     allowed_steps = marble_allowed_steps(state)
     if any(7 in steps for steps in allowed_steps.values()):
         return True
-    for m, steps in allowed_steps.items():
-        if 7 in steps:
-            return True
     for m1, steps1 in allowed_steps.items():
         for m2, steps2 in allowed_steps.items():
             if m1 is not m2:
@@ -92,9 +89,12 @@ def is_valid_split(state):
 
 def marble_allowed_steps(state, max_steps=7):
     allowed_steps = {}
-    mip = state.board.player_marbles_in_play(state.current_player)
-    mih = state.board.home[state.current_player]
-    m_finished = state.board.player_finished_marbles(state.current_player)
+    player = state.current_player
+    if state.player_finished(state.current_player):
+        player = state.teammate(state.current_player)
+    mip = state.board.player_marbles_in_play(player)
+    mih = state.board.home[player]
+    m_finished = state.board.player_finished_marbles(player)
     movable_home_marbles = len([m for m in mih if m is not None]) - m_finished
     if (
         len(mip) == 1
@@ -111,9 +111,9 @@ def marble_allowed_steps(state, max_steps=7):
             allowed_steps.setdefault(m, []).append(step)
     for m in mih:
         if m is not None:
-            marble_pos = state.board.pos_of_home_marble(m, state.current_player)
+            marble_pos = state.board.pos_of_home_marble(m, player)
             for step in range(1, max_steps + 1):
-                if is_valid_home_move(state, m, state.current_player, step):
+                if is_valid_home_move(state, m, player, step):
                     allowed_steps.setdefault(m, []).append(step)
     return allowed_steps
 

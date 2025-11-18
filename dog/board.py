@@ -77,3 +77,19 @@ class Board:
                     finished += 1
 
         return finished
+
+    def team_finished_marbles(self, team: tuple["Player", "Player"]) -> int:
+        return self.player_finished_marbles(team[0]) + self.player_finished_marbles(
+            team[1]
+        )
+
+    def total_distance_to_home(self, player: "Player") -> int:
+        startfield = self.start_fields[player]
+        total = 0
+        for m in self.player_marbles_in_play(player):
+            pos = self.pos_of_marble(m)
+            if pos is None:
+                continue
+            distance = (startfield - pos) % self.NUM_FIELDS
+            total += distance
+        return total

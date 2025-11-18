@@ -6,9 +6,10 @@ from .enums import Colors, GamePhase
 from .cli import print_no_actions, select_action, select_switch_card
 from .rules import legal_actions
 from .move import start_action
+from agent.agent import Agent
 
 
-def setup_game(num_players: int) -> GameState:
+def setup_game(num_players: int, agents: list[Agent]) -> GameState:
     deck = Deck()
     deck.shuffle()
     players = [
@@ -23,6 +24,7 @@ def setup_game(num_players: int) -> GameState:
         (players[0], players[2]),
         (players[1], players[3]),
     ]
+    agents_dict = {player: agent for player, agent in zip(players, agents)}
     return GameState(
         players=players,
         board=board,
@@ -30,10 +32,13 @@ def setup_game(num_players: int) -> GameState:
         current_player=players[0],
         last_started_player=players[0],
         teams=teams,
+        agents=agents_dict,
     )
 
 
 def step(state: GameState) -> GameState:
+    agent = state.agents[state.current_player]
+
     state.check_winner()
     if state.finished:
         return state
@@ -45,7 +50,7 @@ def step(state: GameState) -> GameState:
         return state
 
     elif state.phase == GamePhase.SWITCH:
-        selected_card = select_switch_card(state)
+        selected_card = agent.select_switch_card(state, state.current_player.hand)
         state.switch_cards.append((state.current_player, selected_card))
 
         if len(state.switch_cards) < len(state.players):
@@ -64,7 +69,7 @@ def step(state: GameState) -> GameState:
             return state
         state.cp_actions = legal_actions(state)
         if not state.cp_actions:
-            print_no_actions()
+            agent.no_actions()
             state.current_player.fold()
             state.advance_player()
         else:
@@ -72,7 +77,7 @@ def step(state: GameState) -> GameState:
         return state
 
     elif state.phase == GamePhase.PLAY:
-        action = select_action(state)
+        action = agent.select_action(state, state.cp_actions, state.current_player)
         start_action(state, action)
         state.current_player.play_card(action.card)
         state.reset_actions()

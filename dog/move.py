@@ -13,10 +13,13 @@ def start_action(state, action):
     elif action.kind == MoveKind.SPLIT:
         state.phase = GamePhase.SPLIT
         steps = 7
+        agent = state.agents[state.current_player]
         while steps > 0:
-            render(state)
+            # render(state)
             allowed_steps = marble_allowed_steps(state, steps)
-            m, s = select_split_action(action, allowed_steps)
+            if not allowed_steps:
+                break
+            m, s = agent.select_split_action(action, allowed_steps, state)
             move_marble(state, m, s)
             steps -= s
 
@@ -24,6 +27,9 @@ def start_action(state, action):
 def swap_marbles(state, marble1, marble2):
     pos1 = state.board.pos_of_marble(marble1)
     pos2 = state.board.pos_of_marble(marble2)
+
+    # print(f"Swapping marbles at positions {pos1} and {pos2}")
+    # input("Press Enter to continue...")
 
     state.board.track[pos1], state.board.track[pos2] = (
         state.board.track[pos2],
