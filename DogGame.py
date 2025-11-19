@@ -114,7 +114,6 @@ class DogState(pyspiel.State):
 
         if phase == GamePhase.PLAY:
             acts = legal_actions(self._inner)
-            # cache actions for decoding
             self._cached_actions = acts
             base = NUM_SWITCH_ACTIONS
             return [base + i for i in range(len(acts))]
