@@ -1,0 +1,13 @@
+# gitignore
+# Ignore Python bytecode files
+__pycache__/
+*.py[cod]
+*$py.class
+# Ignore virtual environment directories
+venv/
+env/
+.venv/
+venv311/
+# Ignore IDE specific files
+.vscode/
+.idea/

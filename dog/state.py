@@ -26,6 +26,8 @@ class GameState:
     num_rounds: int = 0
     winner: tuple[Player, Player] | None = None
     agents: dict[Player, Agent] = field(default_factory=dict)
+    split_steps_remaining: int = 0
+    split_card: Card | None = None
 
     @property
     def next_player(self):

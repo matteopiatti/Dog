@@ -10,7 +10,7 @@ from .objects import Action
 
 
 def render(state) -> None:
-    clear_screen()
+    # clear_screen()
     print_board(state)
     print_hand(state.current_player)
     if state.phase == GamePhase.SWITCH:
