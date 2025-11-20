@@ -1,4 +1,4 @@
-# eval_dqn.py  (updated for parametric DQN)
+# eval_dqn.py  (parametric DQN, players 0+2 vs random 1+3)
 
 import os
 import numpy as np
@@ -22,21 +22,21 @@ def eval_agent(env, agent, opponents, n_episodes=50):
         while not ts.last():
             p = ts.observations["current_player"]
 
-            if p == 0:
-                # observation for player 0
-                obs = np.array(ts.observations["info_state"][0], dtype=np.float32)
+            if p in (0, 2):
+                # observation for current DQN player (0 or 2)
+                obs = np.array(ts.observations["info_state"][p], dtype=np.float32)
 
                 # underlying DogState to decode action ids
-                state = env.get_state  # <-- call, not property
+                state = env.get_state
 
-                legal_ids = ts.observations["legal_actions"][0]
+                legal_ids = ts.observations["legal_actions"][p]
                 if not legal_ids:
-                    # no legal move, should not happen, but safeguard
+                    # no legal move (shouldn't happen often, but safeguard)
                     break
 
-                # build features for each legal action id
+                # build features for each legal action id from this player's POV
                 legal_act_feats = [
-                    encode_action_features(state, 0, aid) for aid in legal_ids
+                    encode_action_features(state, p, aid) for aid in legal_ids
                 ]
 
                 # greedy (eval_mode=True) selection
@@ -48,18 +48,20 @@ def eval_agent(env, agent, opponents, n_episodes=50):
                 ts = env.step([chosen_id])
 
             else:
-                # random opponents as in training
-                out = opponents[p - 1].step(ts, is_evaluation=True)
+                # random opponents (players 1 and 3)
+                out = opponents[p].step(ts, is_evaluation=True)
                 ts = env.step([out.action])
 
         # decide win/loss/draw from underlying game state
         state = env.get_state
         inner = state._inner
-        winner_team = inner.winner
+        winner_team = inner.winner  # tuple(Player, Player) or None
+        players = inner.players
 
+        # our team is players[0] and players[2]
         if winner_team is None:
             draws += 1
-        elif inner.players[0] in winner_team:
+        elif players[0] in winner_team or players[2] in winner_team:
             wins += 1
         else:
             losses += 1
@@ -88,25 +90,27 @@ def main():
 
     # build parametric DQN agent and load weights
     agent = ParametricDQNAgent(
-        player_id=0,
+        player_id=0,  # id not important for eval here
         obs_dim=obs_dim,
         act_dim=ACT_DIM,
     )
     agent.load(model_path)
     print(f"Loaded model from {model_path}")
 
-    # same random opponents as in training (players 1,2,3)
-    opponents = [
-        random_agent.RandomAgent(pid, NUM_ACTIONS, name=f"random_{pid}")
-        for pid in range(1, num_players)
-    ]
+    # random opponents for players 1 and 3 only
+    opponents = {
+        1: random_agent.RandomAgent(1, NUM_ACTIONS, name="random_1"),
+        3: random_agent.RandomAgent(3, NUM_ACTIONS, name="random_3"),
+    }
 
     n_eval = 50
     wins, losses, draws, wr_all, wr_no_draws = eval_agent(
         env, agent, opponents, n_episodes=n_eval
     )
 
-    print(f"Evaluated over {n_eval} games (greedy policy, no learning):")
+    print(
+        f"Evaluated over {n_eval} games (players 0+2 = DQN, 1+3 = random, greedy policy, no learning):"
+    )
     print(f"  wins  = {wins}")
     print(f"  losses= {losses}")
     print(f"  draws = {draws}")

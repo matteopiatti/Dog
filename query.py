@@ -301,6 +301,7 @@ def main():
     # assume we always query from player 0's POV
     player_id = 0
     state, obs, legal = encode_state_to_obs_and_actions(game, inner, player_id)
+    print(inner)
 
     if not legal:
         print("No legal actions for this player in this state.")
