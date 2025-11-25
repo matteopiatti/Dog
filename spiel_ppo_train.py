@@ -24,7 +24,7 @@ MODEL_PATH = "dog_param_ppo.pt"
 UPDATE_EVERY_EP = 10
 LOG_EVERY_EP = 100
 
-EVAL_EVERY_EP = 1000  # how often to evaluate vs snapshot
+EVAL_EVERY_EP = 100  # how often to evaluate vs snapshot
 EVAL_EPISODES = 50  # episodes per eval
 SNAPSHOT_THRESHOLD = 0.80  # win rate (no draws) to replace snapshot
 
@@ -84,34 +84,6 @@ with torch.no_grad():
         max_diff = max(max_diff, diff)
 
 print(f"max param diff between agent and old_agent = {max_diff}")
-
-wins = 0
-losses = 0
-draws = 0
-
-# --------------------------------------------------
-# helper
-# --------------------------------------------------
-
-
-def team_progress(inner) -> tuple[float, float, float]:
-    board = inner.board
-    p0 = inner.players[0]
-    teammate = inner.teammate(p0)
-    team = (p0, teammate)
-
-    finished = float(board.team_finished_marbles(team))
-
-    home_count = 0
-    for p in team:
-        home_count += sum(1 for m in board.home[p] if m is not None)
-    home_count = float(home_count)
-
-    distance = float(
-        board.total_distance_to_home(team[0]) + board.total_distance_to_home(team[1])
-    )
-
-    return finished, home_count, distance
 
 
 def eval_vs_snapshot(
@@ -208,6 +180,45 @@ def eval_vs_snapshot(
     win_rate_no_draws = wins_agent / non_draw if non_draw > 0 else 0.0
 
     return wins_agent, losses_agent, draws, win_rate_all, win_rate_no_draws
+
+
+print("Initial eval vs snapshot BEFORE any training:")
+ew, el, ed, wr_all, wr_no_draws = eval_vs_snapshot(
+    game, agent, old_agent, teammate_id, n_episodes=EVAL_EPISODES
+)
+print(
+    f"  wins={ew}, losses={el}, draws={ed}, "
+    f"win_rate_all={wr_all:.3f}, win_rate_no_draws={wr_no_draws:.3f}"
+)
+
+
+wins = 0
+losses = 0
+draws = 0
+
+# --------------------------------------------------
+# helper
+# --------------------------------------------------
+
+
+def team_progress(inner) -> tuple[float, float, float]:
+    board = inner.board
+    p0 = inner.players[0]
+    teammate = inner.teammate(p0)
+    team = (p0, teammate)
+
+    finished = float(board.team_finished_marbles(team))
+
+    home_count = 0
+    for p in team:
+        home_count += sum(1 for m in board.home[p] if m is not None)
+    home_count = float(home_count)
+
+    distance = float(
+        board.total_distance_to_home(team[0]) + board.total_distance_to_home(team[1])
+    )
+
+    return finished, home_count, distance
 
 
 # --------------------------------------------------
