@@ -350,8 +350,22 @@ for ep in range(NUM_EPISODES):
                 f"[SNAPSHOT UPDATE] win_rate_no_draws={wr_no_draws:.3f} "
                 f">= {SNAPSHOT_THRESHOLD:.2f}, updating snapshot."
             )
+
+            # --- update snapshot weights ---
             old_agent.policy.load_state_dict(agent.policy.state_dict())
             old_agent.value_net.load_state_dict(agent.value_net.state_dict())
+
+            # --- save snapshot to file ---
+            SNAPSHOT_PATH = "dog_param_ppo_old.pt"
+            torch.save(
+                {
+                    "policy": old_agent.policy.state_dict(),
+                    "value_net": old_agent.value_net.state_dict(),
+                },
+                SNAPSHOT_PATH,
+            )
+            print(f"[SNAPSHOT SAVED] {SNAPSHOT_PATH}")
+
 
 # final save
 agent.save(MODEL_PATH)
