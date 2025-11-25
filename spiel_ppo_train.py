@@ -5,9 +5,11 @@
 import os
 import numpy as np
 import pyspiel
+import torch
 
 from DogGame import DogGame, NUM_ACTIONS
 from open_spiel.python import rl_environment
+
 
 from parametric_ppo import ParametricPPOAgent
 from action_features import encode_action_features, ACT_DIM
@@ -70,6 +72,19 @@ old_agent.policy.load_state_dict(agent.policy.state_dict())
 old_agent.value_net.load_state_dict(agent.value_net.state_dict())
 print("Initialized snapshot opponent from current agent.")
 
+with torch.no_grad():
+    max_diff = 0.0
+    for p_new, p_old in zip(agent.policy.parameters(), old_agent.policy.parameters()):
+        diff = (p_new - p_old).abs().max().item()
+        max_diff = max(max_diff, diff)
+    for v_new, v_old in zip(
+        agent.value_net.parameters(), old_agent.value_net.parameters()
+    ):
+        diff = (v_new - v_old).abs().max().item()
+        max_diff = max(max_diff, diff)
+
+print(f"max param diff between agent and old_agent = {max_diff}")
+
 wins = 0
 losses = 0
 draws = 0
@@ -105,16 +120,38 @@ def eval_vs_snapshot(
     snapshot_agent,
     teammate_id: int,
     n_episodes: int = 50,
-) -> tuple[int, int, int, float, float]:
-    """Evaluate current agent team vs snapshot team."""
+):
+    """
+    Evaluate current agent vs snapshot with side randomization.
+
+    Team A: seats (0, teammate_id)
+    Team B: the other two seats.
+
+    For each game we flip which team is controlled by the current agent.
+    """
     env_eval = rl_environment.Environment(game=game)
 
-    wins = 0
-    losses = 0
+    wins_agent = 0
+    losses_agent = 0
     draws = 0
 
-    for _ in range(n_episodes):
+    for ep in range(n_episodes):
         ts = env_eval.reset()
+
+        # build team sets from this state
+        st = env_eval.get_state
+        inner = st._inner
+        players = inner.players
+        p0 = players[0]
+        teammate = inner.teammate(p0)
+        teammate_idx = players.index(teammate)
+        assert teammate_idx == teammate_id, "teammate_id mismatch"
+
+        teamA = {0, teammate_idx}
+        teamB = set(range(len(players))) - teamA
+
+        # flip: even eps -> agent is team A, odd eps -> agent is team B
+        agent_on_teamA = ep % 2 == 0
 
         while not ts.last():
             p = ts.observations["current_player"]
@@ -129,37 +166,48 @@ def eval_vs_snapshot(
                 encode_action_features(state, p, aid) for aid in legal_ids
             ]
 
-            if p == 0 or p == teammate_id:
-                # current agent team
-                idx, chosen_feat, logp, value = agent.select_action(
-                    obs, legal_act_feats, eval_mode=True
-                )
+            # decide who acts for this seat
+            if p in teamA:
+                acting_agent = agent if agent_on_teamA else snapshot_agent
             else:
-                # snapshot team
-                idx, chosen_feat, logp, value = snapshot_agent.select_action(
-                    obs, legal_act_feats, eval_mode=True
-                )
+                acting_agent = snapshot_agent if agent_on_teamA else agent
 
+            idx, chosen_feat, logp, value = acting_agent.select_action(
+                obs, legal_act_feats, eval_mode=True
+            )
             chosen_id = legal_ids[idx]
+
             ts = env_eval.step([chosen_id])
 
+        # winner mapping
         state = env_eval.get_state
         inner = state._inner
         winner_team = inner.winner
 
         if winner_team is None:
             draws += 1
-        elif inner.players[0] in winner_team:
-            wins += 1
         else:
-            losses += 1
+            # winner_team is a pair of player objects
+            winner_seats = {players.index(p) for p in winner_team}
+            teamA_won = winner_seats == teamA
 
-    total = wins + losses + draws
-    win_rate_all = wins / total if total > 0 else 0.0
-    non_draw = wins + losses
-    win_rate_no_draws = wins / non_draw if non_draw > 0 else 0.0
+            if agent_on_teamA:
+                if teamA_won:
+                    wins_agent += 1
+                else:
+                    losses_agent += 1
+            else:
+                if teamA_won:
+                    losses_agent += 1
+                else:
+                    wins_agent += 1
 
-    return wins, losses, draws, win_rate_all, win_rate_no_draws
+    total = wins_agent + losses_agent + draws
+    win_rate_all = wins_agent / total if total > 0 else 0.0
+    non_draw = wins_agent + losses_agent
+    win_rate_no_draws = wins_agent / non_draw if non_draw > 0 else 0.0
+
+    return wins_agent, losses_agent, draws, win_rate_all, win_rate_no_draws
 
 
 # --------------------------------------------------
