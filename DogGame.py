@@ -108,9 +108,9 @@ class DogState(pyspiel.State):
 
         phase = self._inner.phase
 
-        if phase == GamePhase.SWITCH:
-            hand = self._inner.current_player.hand
-            return [i for i in range(len(hand))]  # 0..len(hand)-1
+        # if phase == GamePhase.SWITCH:
+        #     hand = self._inner.current_player.hand
+        #     return [i for i in range(len(hand))]  # 0..len(hand)-1
 
         if phase == GamePhase.PLAY:
             acts = legal_actions(self._inner)

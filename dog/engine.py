@@ -38,6 +38,7 @@ def setup_game(num_players: int, agents: list[Agent]) -> GameState:
 
 def step(state: GameState) -> GameState:
     agent = state.agents[state.current_player]
+    raise NotImplementedError("step function is not implemented for RL engine")
 
     state.check_winner()
     if state.finished:
@@ -46,7 +47,7 @@ def step(state: GameState) -> GameState:
     if state.phase == GamePhase.DEAL:
         state.advance_round()
         deal_cards(state)
-        state.phase = GamePhase.SWITCH
+        state.phase = GamePhase.TURN
         return state
 
     elif state.phase == GamePhase.SWITCH:

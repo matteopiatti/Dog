@@ -1,7 +1,8 @@
-# train_dqn_param.py
+# train_dqn_param_batched.py
+
+import os
 import numpy as np
 import pyspiel
-import os
 
 from DogGame import DogGame, NUM_ACTIONS
 from open_spiel.python import rl_environment
@@ -9,6 +10,22 @@ from open_spiel.python.algorithms import random_agent
 
 from dqn_parametric import ParametricDQNAgent
 from action_features import encode_action_features, ACT_DIM
+
+# --------------------------------------------------
+# hyperparameters
+# --------------------------------------------------
+
+NUM_EPISODES = 50_000
+MODEL_PATH = "dog_dqn_param.pt"
+
+# train only every N transitions
+TRAIN_EVERY = 32  # how many transitions between training calls
+TRAIN_ITERS = 4  # how many gradient steps when we train
+LOG_EVERY_EP = 100
+
+# --------------------------------------------------
+# env / game setup
+# --------------------------------------------------
 
 game = DogGame()
 env = rl_environment.Environment(game=game)
@@ -18,13 +35,16 @@ num_players = game.num_players()
 dummy_ts = env.reset()
 obs_dim = len(dummy_ts.observations["info_state"][0])
 
+# --------------------------------------------------
+# agent
+# --------------------------------------------------
+
 agent = ParametricDQNAgent(
     player_id=0,
     obs_dim=obs_dim,
     act_dim=ACT_DIM,
 )
 
-MODEL_PATH = "dog_dqn_param.pt"
 if os.path.exists(MODEL_PATH):
     agent.load(MODEL_PATH)
     print("Loaded existing parametric DQN checkpoint.")
@@ -37,10 +57,16 @@ opponents = [
     for pid in range(1, num_players)
 ]
 
-num_episodes = 50_000
+# stats
 wins = 0
 losses = 0
 draws = 0
+
+global_step = 0  # count player-0 transitions
+
+# --------------------------------------------------
+# helper
+# --------------------------------------------------
 
 
 def team_progress(inner) -> tuple[float, float, float]:
@@ -63,7 +89,11 @@ def team_progress(inner) -> tuple[float, float, float]:
     return finished, home_count, distance
 
 
-for ep in range(num_episodes):
+# --------------------------------------------------
+# training loop
+# --------------------------------------------------
+
+for ep in range(NUM_EPISODES):
     time_step = env.reset()
 
     # episode storage for player-0 moves
@@ -110,8 +140,6 @@ for ep in range(num_episodes):
             dd = dist_b - dist_a  # positive if closer to home
 
             # shaping reward
-            # tune these coefficients as needed
-            # finished marble should matter most
             NUM_FIELDS = inner_after.board.NUM_FIELDS
             norm_dist = NUM_FIELDS * 8.0
             progress_reward = (
@@ -174,7 +202,7 @@ for ep in range(num_episodes):
         else:
             next_act_feat_list.append(zero_act)
 
-    # push transitions into replay and train
+    # push transitions into replay and train batched
     for obs, af, r, nxt_obs, nxt_af, d in zip(
         obs_list,
         act_feat_list,
@@ -184,13 +212,25 @@ for ep in range(num_episodes):
         done_list,
     ):
         agent.store_transition(obs, af, r, nxt_obs, nxt_af, d)
-        agent.train_step()
+        global_step += 1
 
-    if (ep + 1) % 100 == 0:
+        if global_step % TRAIN_EVERY == 0:
+            for _ in range(TRAIN_ITERS):
+                agent.train_step()
+
+    # periodic logging and checkpoint
+    if (ep + 1) % LOG_EVERY_EP == 0:
+        total = wins + losses + draws
+        win_rate = wins / total if total > 0 else 0.0
         print(
-            f"Episode {ep+1}: wins={wins}, losses={losses}, draws={draws}, win_rate={wins/(wins+losses+draws):.3f}"
+            f"Episode {ep+1}: wins={wins}, losses={losses}, draws={draws}, "
+            f"win_rate={win_rate:.3f}"
         )
         wins = 0
         losses = 0
         draws = 0
         agent.save(MODEL_PATH)
+
+# final save
+agent.save(MODEL_PATH)
+print("Training finished, model saved.")

@@ -33,7 +33,7 @@ def setup_game_rl(num_players: int = 4) -> GameState:
 
 
 def auto_advance_to_decision(state: GameState) -> None:
-    # loop until we reach a player decision or terminal
+
     while True:
         state.check_winner()
         if state.finished:
@@ -42,12 +42,14 @@ def auto_advance_to_decision(state: GameState) -> None:
         if state.phase == GamePhase.DEAL:
             state.advance_round()
             deal_cards(state)
-            state.phase = GamePhase.SWITCH
-            # SWITCH is a player decision phase -> stop
-            return
 
-        elif state.phase == GamePhase.SWITCH:
+            state.phase = GamePhase.TURN
+            # SWITCH is a player decision phase -> stop
+            # return
+
+        if state.phase == GamePhase.SWITCH:
             # decision by current player which card to give -> stop
+            state.phase = GamePhase.TURN
             return
 
         elif state.phase == GamePhase.TURN:
@@ -71,12 +73,15 @@ def auto_advance_to_decision(state: GameState) -> None:
             # should only happen immediately after selecting an action
             # from OpenSpiel side; we will immediately move and advance.
             # In auto_advance() we should never "land" here.
-            raise RuntimeError("auto_advance_to_decision called in PLAY phase")
+            return
+            # raise RuntimeError("auto_advance_to_decision called in PLAY phase")
 
         elif state.phase == GamePhase.SPLIT:
             # split decisions are handled as part of the action itself
             # from OpenSpiel's point of view; we won't stop here
             return
+        else:
+            raise RuntimeError("auto_advance_to_decision called in PLAY phase")
 
 
 def deal_cards(state: GameState) -> None:

@@ -14,7 +14,11 @@ class Deck:
     def __init__(self, cards=None):
         if cards is None:
             suits = [s for s in CardSuit if s != CardSuit.NONE]
-            ranks = [r for r in CardType if r != CardType.JOKER]
+            ranks = [
+                r
+                for r in CardType
+                if r != CardType.JOKER and r != CardType.SEVEN and r != CardType.JACK
+            ]
             base = [Card(r, s) for s in suits for r in ranks]
             jokers = [Card(CardType.JOKER, CardSuit.NONE)] * 3
             self.cards = (base + jokers) * 2
@@ -40,7 +44,7 @@ class Deck:
 MOVE_KINDS = {
     CardType.ACE: [MoveKind.START, MoveKind.MOVE],
     CardType.KING: [MoveKind.START, MoveKind.MOVE],
-    CardType.JOKER: [MoveKind.START, MoveKind.MOVE, MoveKind.SPLIT, MoveKind.SWAP],
+    CardType.JOKER: [MoveKind.START, MoveKind.MOVE],
     CardType.SEVEN: [MoveKind.SPLIT],
     CardType.JACK: [MoveKind.SWAP],
 }
