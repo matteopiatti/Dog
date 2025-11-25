@@ -22,7 +22,7 @@ MODEL_PATH = "dog_param_ppo.pt"
 UPDATE_EVERY_EP = 10
 LOG_EVERY_EP = 100
 
-EVAL_EVERY_EP = 200  # how often to evaluate vs snapshot
+EVAL_EVERY_EP = 1000  # how often to evaluate vs snapshot
 EVAL_EPISODES = 50  # episodes per eval
 SNAPSHOT_THRESHOLD = 0.80  # win rate (no draws) to replace snapshot
 
