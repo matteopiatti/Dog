@@ -1,5 +1,5 @@
 # train_ppo_param.py
-# self-play training: current agent team vs frozen old snapshot team
+# self-play training: agent team vs frozen old snapshot team
 # snapshot is updated only if current agent beats it >= 80% (no-draw win rate)
 
 import os
@@ -210,21 +210,23 @@ draws = 0
 # --------------------------------------------------
 
 
-def team_progress(inner) -> tuple[float, float, float]:
+def team_progress(inner, team_indices) -> tuple[float, float, float]:
+    """
+    Progress for a given team (by seat indices).
+    """
     board = inner.board
-    p0 = inner.players[0]
-    teammate = inner.teammate(p0)
-    team = (p0, teammate)
+    players = inner.players
+    team_players = [players[i] for i in team_indices]
 
-    finished = float(board.team_finished_marbles(team))
+    finished = float(board.team_finished_marbles(tuple(team_players)))
 
-    home_count = 0
-    for p in team:
+    home_count = 0.0
+    for p in team_players:
         home_count += sum(1 for m in board.home[p] if m is not None)
-    home_count = float(home_count)
 
     distance = float(
-        board.total_distance_to_home(team[0]) + board.total_distance_to_home(team[1])
+        board.total_distance_to_home(team_players[0])
+        + board.total_distance_to_home(team_players[1])
     )
 
     return finished, home_count, distance
@@ -238,18 +240,33 @@ for ep in range(NUM_EPISODES):
     time_step = env.reset()
     agent.current_episode = []  # ensure clean
 
+    # build team sets for this episode
+    state_ep = env.get_state
+    inner_ep = state_ep._inner
+    players = inner_ep.players
+    p0 = players[0]
+    teammate = inner_ep.teammate(p0)
+    teammate_idx = players.index(teammate)
+    teamA = {0, teammate_idx}
+    teamB = set(range(len(players))) - teamA
+
+    # flip which team the agent controls this episode
+    agent_on_teamA = ep % 2 == 0
+    agent_team = teamA if agent_on_teamA else teamB
+    snapshot_team = teamB if agent_on_teamA else teamA
+
     while not time_step.last():
         current_player = time_step.observations["current_player"]
         state_before = env.get_state
         inner_before = state_before._inner
 
-        if current_player == 0 or current_player == teammate_id:
-            # current agent players (team)
+        if current_player in agent_team:
+            # current agent players (team for this episode)
             obs = np.array(
                 time_step.observations["info_state"][current_player], dtype=np.float32
             )
 
-            fin_b, home_b, dist_b = team_progress(inner_before)
+            fin_b, home_b, dist_b = team_progress(inner_before, agent_team)
 
             legal_ids = time_step.observations["legal_actions"][current_player]
             state_for_actions = state_before
@@ -267,7 +284,7 @@ for ep in range(NUM_EPISODES):
 
             state_after = env.get_state
             inner_after = state_after._inner
-            fin_a, home_a, dist_a = team_progress(inner_after)
+            fin_a, home_a, dist_a = team_progress(inner_after, agent_team)
 
             df = fin_a - fin_b
             dh = home_a - home_b
@@ -297,7 +314,7 @@ for ep in range(NUM_EPISODES):
             time_step = next_time_step
 
         else:
-            # snapshot opponents (both players on other team)
+            # snapshot opponents (the other team for this episode)
             obs = np.array(
                 time_step.observations["info_state"][current_player], dtype=np.float32
             )
@@ -317,7 +334,7 @@ for ep in range(NUM_EPISODES):
             chosen_id = legal_ids[idx]
             time_step = env.step([chosen_id])
 
-    # decide outcome from underlying game state
+    # decide outcome from underlying game state, relative to agent_team
     state = env.get_state
     inner = state._inner
     winner_team = inner.winner
@@ -325,12 +342,14 @@ for ep in range(NUM_EPISODES):
     if winner_team is None:
         outcome = 0.0
         draws += 1
-    elif inner.players[0] in winner_team:
-        outcome = 1.0
-        wins += 1
     else:
-        outcome = -1.0
-        losses += 1
+        win_seats = {players.index(p) for p in winner_team}
+        if win_seats == agent_team:
+            outcome = 1.0
+            wins += 1
+        else:
+            outcome = -1.0
+            losses += 1
 
     # make outcome signal much stronger than shaping
     if agent.current_episode:
@@ -344,20 +363,20 @@ for ep in range(NUM_EPISODES):
     if (ep + 1) % UPDATE_EVERY_EP == 0:
         agent.update()
 
-    # periodic logging and checkpoint
+    # periodic logging and checkpoint (this win_rate is "agent_team winrate", still biased but ok for quick view)
     if (ep + 1) % LOG_EVERY_EP == 0:
         total = wins + losses + draws
         win_rate = wins / total if total > 0 else 0.0
         print(
-            f"Episode {ep+1}: wins={wins}, losses={losses}, draws={draws}, "
-            f"win_rate={win_rate:.3f}"
+            f"Episode {ep+1}: agent_team_wins={wins}, losses={losses}, draws={draws}, "
+            f"win_rate_agent_team={win_rate:.3f}"
         )
         wins = 0
         losses = 0
         draws = 0
         agent.save(MODEL_PATH)
 
-    # periodic evaluation vs snapshot and snapshot update
+    # periodic evaluation vs snapshot and snapshot update (side-balanced)
     if (ep + 1) % EVAL_EVERY_EP == 0:
         ew, el, ed, wr_all, wr_no_draws = eval_vs_snapshot(
             game, agent, old_agent, teammate_id, n_episodes=EVAL_EPISODES

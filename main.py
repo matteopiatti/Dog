@@ -27,9 +27,9 @@ def main():
         worst = pool[worst_idx]
         agents = [
             HumanAgent(),
-            TrainingAgent(best["action"], best["switch"]),
-            RandomAgent(),
-            TrainingAgent(worst["action"], worst["switch"]),
+            HumanAgent(),
+            HumanAgent(),
+            HumanAgent(),
         ]
         state = setup_game(num_players=4, agents=agents)
         while not state.finished:
