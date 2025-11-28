@@ -1,8 +1,10 @@
 # train_ppo_param.py
-# self-play training: agent team vs frozen old snapshot team
-# snapshot is updated only if current agent beats it >= 80% (no-draw win rate)
+# Self-play training: agent team vs league of frozen snapshot teams.
+# Snapshot is updated only if current agent beats latest snapshot above threshold
+# (win rate vs snapshot, side-balanced).
 
 import os
+import random
 import numpy as np
 import pyspiel
 import torch
@@ -23,9 +25,19 @@ MODEL_PATH = "dog_param_ppo.pt"
 UPDATE_EVERY_EP = 10
 LOG_EVERY_EP = 100
 
-EVAL_EVERY_EP = 100  # how often to evaluate vs snapshot
+EVAL_EVERY_EP = 100  # how often to evaluate vs latest snapshot
 EVAL_EPISODES = 50  # episodes per eval
-SNAPSHOT_THRESHOLD = 0.80  # win rate (no draws) to replace snapshot
+SNAPSHOT_THRESHOLD = 0.65  # lower than 0.8 so snapshots actually update
+
+# PPO hyperparameters (must match between agent and snapshots)
+PPO_LR = 1e-4
+PPO_CLIP_EPS = 0.1
+PPO_ENTROPY_COEF = 0.02
+PPO_UPDATE_EPOCHS = 6
+PPO_MINIBATCH_SIZE = 512
+
+# max number of opponents in league
+MAX_LEAGUE_SIZE = 5
 
 # --------------------------------------------------
 # env / game setup
@@ -50,15 +62,14 @@ print(f"Player 0 teammate id: {teammate_id}")
 # agents
 # --------------------------------------------------
 
-# tuned PPO hyperparameters
 agent = ParametricPPOAgent(
     obs_dim=obs_dim,
     act_dim=ACT_DIM,
-    lr=1e-4,
-    clip_eps=0.1,
-    entropy_coef=0.02,
-    update_epochs=6,
-    minibatch_size=512,
+    lr=PPO_LR,
+    clip_eps=PPO_CLIP_EPS,
+    entropy_coef=PPO_ENTROPY_COEF,
+    update_epochs=PPO_UPDATE_EPOCHS,
+    minibatch_size=PPO_MINIBATCH_SIZE,
 )
 
 if os.path.exists(MODEL_PATH):
@@ -67,17 +78,16 @@ if os.path.exists(MODEL_PATH):
 else:
     print("No existing checkpoint, starting fresh.")
 
-# frozen snapshot opponent (same hyperparams)
+# latest snapshot opponent
 old_agent = ParametricPPOAgent(
     obs_dim=obs_dim,
     act_dim=ACT_DIM,
-    lr=1e-4,
-    clip_eps=0.1,
-    entropy_coef=0.02,
-    update_epochs=6,
-    minibatch_size=512,
+    lr=PPO_LR,
+    clip_eps=PPO_CLIP_EPS,
+    entropy_coef=PPO_ENTROPY_COEF,
+    update_epochs=PPO_UPDATE_EPOCHS,
+    minibatch_size=PPO_MINIBATCH_SIZE,
 )
-# initialize snapshot = current
 old_agent.policy.load_state_dict(agent.policy.state_dict())
 old_agent.value_net.load_state_dict(agent.value_net.state_dict())
 print("Initialized snapshot opponent from current agent.")
@@ -94,6 +104,9 @@ with torch.no_grad():
         max_diff = max(max_diff, diff)
 
 print(f"max param diff between agent and old_agent = {max_diff}")
+
+# league of snapshot opponents (start with one)
+snapshot_league = [old_agent]
 
 
 def eval_vs_snapshot(
@@ -169,7 +182,6 @@ def eval_vs_snapshot(
         if winner_team is None:
             draws += 1
         else:
-            # winner_team is a pair of player objects
             winner_seats = {players.index(p) for p in winner_team}
             teamA_won = winner_seats == teamA
 
@@ -206,33 +218,6 @@ losses = 0
 draws = 0
 
 # --------------------------------------------------
-# helper
-# --------------------------------------------------
-
-
-def team_progress(inner, team_indices) -> tuple[float, float, float]:
-    """
-    Progress for a given team (by seat indices).
-    """
-    board = inner.board
-    players = inner.players
-    team_players = [players[i] for i in team_indices]
-
-    finished = float(board.team_finished_marbles(tuple(team_players)))
-
-    home_count = 0.0
-    for p in team_players:
-        home_count += sum(1 for m in board.home[p] if m is not None)
-
-    distance = float(
-        board.total_distance_to_home(team_players[0])
-        + board.total_distance_to_home(team_players[1])
-    )
-
-    return finished, home_count, distance
-
-
-# --------------------------------------------------
 # training loop
 # --------------------------------------------------
 
@@ -255,18 +240,18 @@ for ep in range(NUM_EPISODES):
     agent_team = teamA if agent_on_teamA else teamB
     snapshot_team = teamB if agent_on_teamA else teamA
 
+    # sample opponent for this episode from league
+    opponent_agent = random.choice(snapshot_league)
+
     while not time_step.last():
         current_player = time_step.observations["current_player"]
         state_before = env.get_state
-        inner_before = state_before._inner
 
         if current_player in agent_team:
-            # current agent players (team for this episode)
+            # agent-controlled players (for this episode)
             obs = np.array(
                 time_step.observations["info_state"][current_player], dtype=np.float32
             )
-
-            fin_b, home_b, dist_b = team_progress(inner_before, agent_team)
 
             legal_ids = time_step.observations["legal_actions"][current_player]
             state_for_actions = state_before
@@ -282,23 +267,9 @@ for ep in range(NUM_EPISODES):
 
             next_time_step = env.step([chosen_id])
 
-            state_after = env.get_state
-            inner_after = state_after._inner
-            fin_a, home_a, dist_a = team_progress(inner_after, agent_team)
-
-            df = fin_a - fin_b
-            dh = home_a - home_b
-            dd = dist_b - dist_a
-
-            NUM_FIELDS = inner_after.board.NUM_FIELDS
-            norm_dist = NUM_FIELDS * 8.0
-
-            # weaker shaping: keep magnitude O(1) per game
-            progress_reward = 0.1 * df + 0.02 * dh + 0.1 * (dd / norm_dist)
-
-            # env reward for this player
+            # pure game reward (no shaping)
             env_reward = next_time_step.rewards[current_player]
-            r = progress_reward + env_reward
+            r = env_reward
             d = next_time_step.last()
 
             agent.store_step(
@@ -314,7 +285,7 @@ for ep in range(NUM_EPISODES):
             time_step = next_time_step
 
         else:
-            # snapshot opponents (the other team for this episode)
+            # snapshot-opponent-controlled players
             obs = np.array(
                 time_step.observations["info_state"][current_player], dtype=np.float32
             )
@@ -328,7 +299,7 @@ for ep in range(NUM_EPISODES):
                 for aid in legal_ids
             ]
 
-            idx, chosen_feat, logp, value = old_agent.select_action(
+            idx, chosen_feat, logp, value = opponent_agent.select_action(
                 obs, legal_act_feats, eval_mode=False
             )
             chosen_id = legal_ids[idx]
@@ -351,7 +322,7 @@ for ep in range(NUM_EPISODES):
             outcome = -1.0
             losses += 1
 
-    # make outcome signal much stronger than shaping
+    # make outcome signal much stronger than sparse per-step env reward
     if agent.current_episode:
         agent.current_episode[-1].reward += 5.0 * outcome
         agent.current_episode[-1].done = True
@@ -363,7 +334,7 @@ for ep in range(NUM_EPISODES):
     if (ep + 1) % UPDATE_EVERY_EP == 0:
         agent.update()
 
-    # periodic logging and checkpoint (this win_rate is "agent_team winrate", still biased but ok for quick view)
+    # periodic logging and checkpoint (agent_team winrate)
     if (ep + 1) % LOG_EVERY_EP == 0:
         total = wins + losses + draws
         win_rate = wins / total if total > 0 else 0.0
@@ -376,27 +347,43 @@ for ep in range(NUM_EPISODES):
         draws = 0
         agent.save(MODEL_PATH)
 
-    # periodic evaluation vs snapshot and snapshot update (side-balanced)
+    # periodic evaluation vs latest snapshot and snapshot/league update
     if (ep + 1) % EVAL_EVERY_EP == 0:
         ew, el, ed, wr_all, wr_no_draws = eval_vs_snapshot(
             game, agent, old_agent, teammate_id, n_episodes=EVAL_EPISODES
         )
         print(
-            f"[EVAL ep {ep+1}] vs snapshot: wins={ew}, losses={el}, draws={ed}, "
+            f"[EVAL ep {ep+1}] vs latest snapshot: wins={ew}, losses={el}, draws={ed}, "
             f"win_rate_all={wr_all:.3f}, win_rate_no_draws={wr_no_draws:.3f}"
         )
 
         if wr_no_draws >= SNAPSHOT_THRESHOLD and (ew + el) > 0:
             print(
                 f"[SNAPSHOT UPDATE] win_rate_no_draws={wr_no_draws:.3f} "
-                f">= {SNAPSHOT_THRESHOLD:.2f}, updating snapshot."
+                f">= {SNAPSHOT_THRESHOLD:.2f}, updating snapshot and league."
             )
 
-            # --- update snapshot weights ---
+            # update "latest" snapshot
             old_agent.policy.load_state_dict(agent.policy.state_dict())
             old_agent.value_net.load_state_dict(agent.value_net.state_dict())
 
-            # --- save snapshot to file ---
+            # add a fresh frozen copy into league
+            new_snapshot = ParametricPPOAgent(
+                obs_dim=obs_dim,
+                act_dim=ACT_DIM,
+                lr=PPO_LR,
+                clip_eps=PPO_CLIP_EPS,
+                entropy_coef=PPO_ENTROPY_COEF,
+                update_epochs=PPO_UPDATE_EPOCHS,
+                minibatch_size=PPO_MINIBATCH_SIZE,
+            )
+            new_snapshot.policy.load_state_dict(agent.policy.state_dict())
+            new_snapshot.value_net.load_state_dict(agent.value_net.state_dict())
+            snapshot_league.append(new_snapshot)
+            if len(snapshot_league) > MAX_LEAGUE_SIZE:
+                snapshot_league.pop(0)
+
+            # save latest snapshot to file
             SNAPSHOT_PATH = "dog_param_ppo_old.pt"
             torch.save(
                 {

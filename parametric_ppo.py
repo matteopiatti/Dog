@@ -24,32 +24,33 @@ class StepRecord:
 
 
 class ParamPolicyNet(nn.Module):
-    def __init__(self, obs_dim: int, act_dim: int, hidden_sizes=(128, 128)):
+    def __init__(self, obs_dim: int, act_dim: int, hidden_sizes=(256, 256, 256)):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(obs_dim + act_dim, hidden_sizes[0]),
-            nn.ReLU(),
-            nn.Linear(hidden_sizes[0], hidden_sizes[1]),
-            nn.ReLU(),
-            nn.Linear(hidden_sizes[1], 1),  # scalar logit for that (s,a)
-        )
+        layers = []
+        input_dim = obs_dim + act_dim
+        for h in hidden_sizes:
+            layers.append(nn.Linear(input_dim, h))
+            layers.append(nn.ReLU())
+            input_dim = h
+        layers.append(nn.Linear(input_dim, 1))  # scalar logit for (s,a)
+        self.net = nn.Sequential(*layers)
 
     def forward(self, obs: torch.Tensor, act_feat: torch.Tensor) -> torch.Tensor:
-        # obs: [N, obs_dim], act_feat: [N, act_dim]
         x = torch.cat([obs, act_feat], dim=-1)
         return self.net(x)  # [N, 1]
 
 
 class ValueNet(nn.Module):
-    def __init__(self, obs_dim: int, hidden_sizes=(128, 128)):
+    def __init__(self, obs_dim: int, hidden_sizes=(256, 256, 256)):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(obs_dim, hidden_sizes[0]),
-            nn.ReLU(),
-            nn.Linear(hidden_sizes[0], hidden_sizes[1]),
-            nn.ReLU(),
-            nn.Linear(hidden_sizes[1], 1),
-        )
+        layers = []
+        input_dim = obs_dim
+        for h in hidden_sizes:
+            layers.append(nn.Linear(input_dim, h))
+            layers.append(nn.ReLU())
+            input_dim = h
+        layers.append(nn.Linear(input_dim, 1))
+        self.net = nn.Sequential(*layers)
 
     def forward(self, obs: torch.Tensor) -> torch.Tensor:
         return self.net(obs)  # [N, 1]
@@ -69,6 +70,8 @@ class ParametricPPOAgent:
         max_grad_norm: float = 0.5,
         update_epochs: int = 4,
         minibatch_size: int = 256,
+        policy_hidden=(256, 256, 256),
+        value_hidden=(256, 256, 256),
         device: str | None = None,
     ):
         self.obs_dim = obs_dim
@@ -84,15 +87,16 @@ class ParametricPPOAgent:
 
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.policy = ParamPolicyNet(obs_dim, act_dim).to(self.device)
-        self.value_net = ValueNet(obs_dim).to(self.device)
+        self.policy = ParamPolicyNet(obs_dim, act_dim, hidden_sizes=policy_hidden).to(
+            self.device
+        )
+        self.value_net = ValueNet(obs_dim, hidden_sizes=value_hidden).to(self.device)
 
         self.optimizer = optim.Adam(
             list(self.policy.parameters()) + list(self.value_net.parameters()),
             lr=lr,
         )
 
-        # storage
         self.current_episode: List[StepRecord] = []
         self.buffer: List[StepRecord] = []
         self.buffer_advantages: List[float] = []
