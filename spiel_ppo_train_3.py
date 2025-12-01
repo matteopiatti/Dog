@@ -1,8 +1,7 @@
 # train_ppo_param.py
 # Self-play training: agent team vs league of frozen snapshot teams.
-# Latest snapshot is always updated to current agent.
-# League accumulates older snapshots periodically.
-# Progress is also measured vs fixed random baseline.
+# Latest snapshot is periodically updated to current agent and added to a league.
+# Progress is monitored only vs a frozen baseline agent.
 
 import os
 import random
@@ -12,7 +11,6 @@ import torch
 
 from DogGame import DogGame, NUM_ACTIONS
 from open_spiel.python import rl_environment
-from open_spiel.python.algorithms import random_agent
 
 from parametric_ppo import ParametricPPOAgent
 from action_features import encode_action_features, ACT_DIM
@@ -20,15 +18,16 @@ from action_features import encode_action_features, ACT_DIM
 # --------------------------------------------------
 # hyperparameters
 # --------------------------------------------------
+
 NUM_EPISODES = 50_000
 MODEL_PATH = "dog_param_ppo.pt"
+BASELINE_PATH = "dog_param_ppo_baseline_v1.pt"  # frozen reference agent
 
 UPDATE_EVERY_EP = 10
 LOG_EVERY_EP = 100
 
-EVAL_EVERY_EP = 100  # how often to evaluate vs latest snapshot
-EVAL_EPISODES = 50  # episodes per eval
-EVAL_RANDOM_EVERY_EP = 1000  # how often to evaluate vs random baseline
+EVAL_BASELINE_EVERY_EP = 1000  # how often to evaluate vs baseline
+EVAL_EPISODES = 50  # games per eval vs baseline
 
 # PPO hyperparameters (must match between agent and snapshots)
 PPO_LR = 1e-4
@@ -39,7 +38,8 @@ PPO_MINIBATCH_SIZE = 512
 
 # snapshot league settings
 MAX_LEAGUE_SIZE = 5
-SNAPSHOT_ADD_PERIOD = 5  # add a frozen snapshot to league every N evals
+SNAPSHOT_UPDATE_EVERY_EP = 100  # how often to update latest snapshot + league
+SNAPSHOT_ADD_PERIOD = 5  # add frozen snapshot to league every N snapshot updates
 
 # --------------------------------------------------
 # env / game setup
@@ -114,7 +114,27 @@ print(f"max param diff between agent and old_agent = {max_diff}")
 
 # league of snapshot opponents (start with one)
 snapshot_league = [old_agent]
-eval_counter = 0
+snapshot_update_counter = 0
+
+# frozen baseline agent (for measuring real progress)
+baseline_agent = None
+if os.path.exists(BASELINE_PATH):
+    baseline_agent = ParametricPPOAgent(
+        obs_dim=obs_dim,
+        act_dim=ACT_DIM,
+        lr=PPO_LR,
+        clip_eps=PPO_CLIP_EPS,
+        entropy_coef=PPO_ENTROPY_COEF,
+        update_epochs=PPO_UPDATE_EPOCHS,
+        minibatch_size=PPO_MINIBATCH_SIZE,
+    )
+    baseline_agent.load(BASELINE_PATH)
+    print(f"Loaded baseline agent from {BASELINE_PATH}")
+else:
+    print(
+        f"No baseline file '{BASELINE_PATH}'. "
+        f"You can create one by copying a checkpoint there."
+    )
 
 # --------------------------------------------------
 # helpers
@@ -143,15 +163,15 @@ def team_progress(inner, team_indices) -> tuple[float, float, float]:
     return finished, home_count, distance
 
 
-def eval_vs_snapshot(
+def eval_vs_baseline(
     game,
     agent,
-    snapshot_agent,
+    baseline_agent,
     teammate_id: int,
     n_episodes: int = 50,
 ):
     """
-    Evaluate current agent vs snapshot with side randomization.
+    Evaluate current agent vs a frozen baseline with side randomization.
 
     Team A: seats (0, teammate_id)
     Team B: the other two seats.
@@ -194,9 +214,9 @@ def eval_vs_snapshot(
             ]
 
             if p in teamA:
-                acting_agent = agent if agent_on_teamA else snapshot_agent
+                acting_agent = agent if agent_on_teamA else baseline_agent
             else:
-                acting_agent = snapshot_agent if agent_on_teamA else agent
+                acting_agent = baseline_agent if agent_on_teamA else agent
 
             idx, chosen_feat, logp, value = acting_agent.select_action(
                 obs, legal_act_feats, eval_mode=True
@@ -233,85 +253,6 @@ def eval_vs_snapshot(
 
     return wins_agent, losses_agent, draws, win_rate_all, win_rate_no_draws
 
-
-def eval_vs_random(game, agent, teammate_id: int, n_episodes: int = 50):
-    """
-    Evaluate agent team vs random opponents.
-    Team = {0, teammate_id}; others are random.
-    """
-    env_eval = rl_environment.Environment(game=game)
-    num_players = game.num_players()
-
-    rand_agents = [
-        random_agent.RandomAgent(pid, NUM_ACTIONS, name=f"random_{pid}")
-        for pid in range(num_players)
-    ]
-
-    wins = 0
-    losses = 0
-    draws = 0
-
-    for _ in range(n_episodes):
-        ts = env_eval.reset()
-        state = env_eval.get_state
-        inner = state._inner
-        players = inner.players
-        p0 = players[0]
-        teammate = inner.teammate(p0)
-        teammate_idx = players.index(teammate)
-        teamA = {0, teammate_idx}
-
-        while not ts.last():
-            p = ts.observations["current_player"]
-            state = env_eval.get_state
-
-            legal_ids = ts.observations["legal_actions"][p]
-            if not legal_ids:
-                break
-
-            if p in teamA:
-                obs = np.array(ts.observations["info_state"][p], dtype=np.float32)
-                legal_act_feats = [
-                    encode_action_features(state, p, aid) for aid in legal_ids
-                ]
-                idx, chosen_feat, logp, value = agent.select_action(
-                    obs, legal_act_feats, eval_mode=True
-                )
-                chosen_id = legal_ids[idx]
-            else:
-                out = rand_agents[p].step(ts, is_evaluation=True)
-                chosen_id = out.action
-
-            ts = env_eval.step([chosen_id])
-
-        state = env_eval.get_state
-        inner = state._inner
-        winner_team = inner.winner
-
-        if winner_team is None:
-            draws += 1
-        else:
-            winner_seats = {players.index(pl) for pl in winner_team}
-            if winner_seats == teamA:
-                wins += 1
-            else:
-                losses += 1
-
-    total = wins + losses + draws
-    wr_all = wins / total if total > 0 else 0.0
-    non_draw = wins + losses
-    wr_no_draws = wins / non_draw if non_draw > 0 else 0.0
-    return wins, losses, draws, wr_all, wr_no_draws
-
-
-print("Initial eval vs snapshot BEFORE any training:")
-ew, el, ed, wr_all, wr_no_draws = eval_vs_snapshot(
-    game, agent, old_agent, teammate_id, n_episodes=EVAL_EPISODES
-)
-print(
-    f"  wins={ew}, losses={el}, draws={ed}, "
-    f"win_rate_all={wr_all:.3f}, win_rate_no_draws={wr_no_draws:.3f}"
-)
 
 wins = 0
 losses = 0
@@ -465,26 +406,18 @@ for ep in range(NUM_EPISODES):
         losses = 0
         draws = 0
         agent.save(MODEL_PATH)
+        print(f"Saved current agent to {MODEL_PATH}")
 
-    # periodic evaluation vs latest snapshot and league update
-    if (ep + 1) % EVAL_EVERY_EP == 0:
-        ew, el, ed, wr_all, wr_no_draws = eval_vs_snapshot(
-            game, agent, old_agent, teammate_id, n_episodes=EVAL_EPISODES
-        )
-        print(
-            f"[EVAL ep {ep+1}] vs latest snapshot: wins={ew}, losses={el}, draws={ed}, "
-            f"win_rate_all={wr_all:.3f}, win_rate_no_draws={wr_no_draws:.3f}"
-        )
+    # periodic snapshot update and league growth (silent w.r.t. winrates)
+    if (ep + 1) % SNAPSHOT_UPDATE_EVERY_EP == 0:
+        snapshot_update_counter += 1
 
-        eval_counter += 1
-
-        # always update latest snapshot to current agent
+        # update latest snapshot to current agent
         old_agent.policy.load_state_dict(agent.policy.state_dict())
         old_agent.value_net.load_state_dict(agent.value_net.state_dict())
 
         # periodically add frozen snapshot to league
-        if eval_counter % SNAPSHOT_ADD_PERIOD == 0:
-            print("[LEAGUE] Adding new snapshot to league.")
+        if snapshot_update_counter % SNAPSHOT_ADD_PERIOD == 0:
             new_snapshot = ParametricPPOAgent(
                 obs_dim=obs_dim,
                 act_dim=ACT_DIM,
@@ -510,14 +443,15 @@ for ep in range(NUM_EPISODES):
             )
             print(f"[SNAPSHOT SAVED] {SNAPSHOT_PATH}")
 
-    # periodic evaluation vs random baseline
-    if (ep + 1) % EVAL_RANDOM_EVERY_EP == 0:
-        rw, rl, rd, r_all, r_no = eval_vs_random(
-            game, agent, teammate_id, n_episodes=EVAL_EPISODES
+    # periodic evaluation vs frozen baseline (only metric you care about)
+    if baseline_agent is not None and (ep + 1) % EVAL_BASELINE_EVERY_EP == 0:
+        bw, bl, bd, b_all, b_no = eval_vs_baseline(
+            game, agent, baseline_agent, teammate_id, n_episodes=EVAL_EPISODES
         )
         print(
-            f"[EVAL-RANDOM ep {ep+1}] vs random: wins={rw}, losses={rl}, draws={rd}, "
-            f"win_rate_all={r_all:.3f}, win_rate_no_draws={r_no:.3f}"
+            f"[EVAL-BASELINE ep {ep+1}] vs baseline: "
+            f"wins={bw}, losses={bl}, draws={bd}, "
+            f"win_rate_all={b_all:.3f}, win_rate_no_draws={b_no:.3f}"
         )
 
 # final save
