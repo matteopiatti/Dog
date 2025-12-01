@@ -37,7 +37,7 @@ def human_choose_action(env, ts, player_id: int) -> int:
     print(f"Your player id: {player_id}")
     print("Legal moves (index: action_id):")
     for i, aid in enumerate(legal_ids):
-        print(f"  {i}: action_id={aid}")
+        print(f"  {i+1}: action_id={aid}")
 
     while True:
         choice = input("Choose move index (or 'q' to quit this game): ").strip()
@@ -45,9 +45,9 @@ def human_choose_action(env, ts, player_id: int) -> int:
             return -1
         try:
             idx = int(choice)
-            if 0 <= idx < len(legal_ids):
-                return legal_ids[idx]
-            print(f"Invalid index, please enter 0..{len(legal_ids)-1}")
+            if 0 <= idx <= len(legal_ids):
+                return legal_ids[idx - 1]
+            print(f"Invalid index, please enter 1..{len(legal_ids)}")
         except ValueError:
             print("Please enter a valid integer index or 'q' to quit.")
 
