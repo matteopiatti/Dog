@@ -141,10 +141,25 @@ else:
 # --------------------------------------------------
 
 
+def potential(inner, agent_team_indices, opp_team_indices) -> float:
+    board = inner.board
+
+    finished_team, home_team, dist_team = team_progress(inner, agent_team_indices)
+    finished_opp, home_opp, dist_opp = team_progress(inner, opp_team_indices)
+
+    # normalize distance
+    NUM_FIELDS = board.NUM_FIELDS
+    norm_dist = NUM_FIELDS * 8.0
+
+    # potential weights (tune if needed)
+    return (
+        1.0 * (finished_team - finished_opp)
+        + 0.2 * (home_team - home_opp)
+        + 0.5 * ((dist_opp - dist_team) / norm_dist)
+    )
+
+
 def team_progress(inner, team_indices) -> tuple[float, float, float]:
-    """
-    Progress for a given team (by seat indices).
-    """
     board = inner.board
     players = inner.players
     team_players = [players[i] for i in team_indices]
@@ -302,8 +317,8 @@ for ep in range(NUM_EPISODES):
                 for aid in legal_ids
             ]
 
-            # progress BEFORE
-            fin_b, home_b, dist_b = team_progress(inner_before, agent_team)
+            # potential BEFORE
+            phi_before = potential(inner_before, agent_team, snapshot_team)
 
             idx, chosen_feat, logp, value = agent.select_action(
                 obs, legal_act_feats, eval_mode=False
@@ -315,21 +330,14 @@ for ep in range(NUM_EPISODES):
             state_after = env.get_state
             inner_after = state_after._inner
 
-            # progress AFTER
-            fin_a, home_a, dist_a = team_progress(inner_after, agent_team)
-            df = fin_a - fin_b
-            dh = home_a - home_b
-            dd = dist_b - dist_a  # positive if closer
+            # potential AFTER
+            phi_after = potential(inner_after, agent_team, snapshot_team)
 
-            NUM_FIELDS = inner_after.board.NUM_FIELDS
-            norm_dist = NUM_FIELDS * 8.0
+            progress_reward = phi_after - phi_before
 
-            # small progress shaping
-            progress_reward = 0.02 * df + 0.01 * dh + 0.02 * (dd / norm_dist)
-
-            # env reward for this player
             env_reward = next_time_step.rewards[current_player]
-            r = env_reward + progress_reward
+            SHAPING_SCALE = 0.5  # try 0.5, then tune
+            r = env_reward + SHAPING_SCALE * progress_reward
             d = next_time_step.last()
 
             agent.store_step(
@@ -382,9 +390,9 @@ for ep in range(NUM_EPISODES):
             outcome = -1.0
             losses += 1
 
-    # strong terminal signal
+    OUTCOME_BONUS = 3.0
     if agent.current_episode:
-        agent.current_episode[-1].reward += 5.0 * outcome
+        agent.current_episode[-1].reward += OUTCOME_BONUS * outcome
         agent.current_episode[-1].done = True
 
     # move episode into global buffer with GAE/returns
