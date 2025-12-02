@@ -141,22 +141,65 @@ else:
 # --------------------------------------------------
 
 
-def potential(inner, agent_team_indices, opp_team_indices) -> float:
-    board = inner.board
+def compute_shaping(
+    inner_before, inner_after, agent_team_indices, opp_team_indices
+) -> float:
+    """
+    Shaping based on team vs opponent progress and big 'capture-like' jumps.
+    """
+    board = inner_after.board  # same board object before/after
 
-    finished_team, home_team, dist_team = team_progress(inner, agent_team_indices)
-    finished_opp, home_opp, dist_opp = team_progress(inner, opp_team_indices)
+    # our team before/after
+    ft_b, ht_b, dt_b = team_progress(inner_before, agent_team_indices)
+    ft_a, ht_a, dt_a = team_progress(inner_after, agent_team_indices)
 
-    # normalize distance
+    # opponent team before/after
+    fo_b, ho_b, do_b = team_progress(inner_before, opp_team_indices)
+    fo_a, ho_a, do_a = team_progress(inner_after, opp_team_indices)
+
     NUM_FIELDS = board.NUM_FIELDS
     norm_dist = NUM_FIELDS * 8.0
 
-    # potential weights (tune if needed)
-    return (
-        1.0 * (finished_team - finished_opp)
-        + 0.2 * (home_team - home_opp)
-        + 0.5 * ((dist_opp - dist_team) / norm_dist)
+    # distances: smaller is better (closer to home)
+    # positive dd_team means we got closer; positive dd_opp means opponent got closer
+    dd_team = dt_b - dt_a
+    dd_opp = do_b - do_a
+
+    # basic progress:
+    #   + we finish / reach home
+    #   - opponent finishes / reaches home
+    #   + we get closer
+    #   - opponent gets closer
+    basic_progress = (
+        0.6 * (ft_a - ft_b)  # finished marbles, strong
+        + 0.15 * (ht_a - ht_b)  # home-row marbles, moderate
+        + 0.4 * (dd_team / norm_dist)
+        - 0.6 * (fo_a - fo_b)
+        - 0.15 * (ho_a - ho_b)
+        - 0.4 * (dd_opp / norm_dist)
     )
+
+    # capture-like events:
+    # if opponent total distance suddenly increases a lot, we probably sent something far back
+    capture_bonus = 0.0
+    delta_opp_total_dist = do_a - do_b  # >0 if opp got further away overall
+    delta_team_total_dist = dt_a - dt_b  # >0 if we got further away overall
+
+    # heuristic thresholds: half a board worth of increase in summed distance
+    capture_threshold = NUM_FIELDS * 0.5
+
+    if delta_opp_total_dist > capture_threshold:
+        capture_bonus += 1.0  # big reward for hitting opponent hard
+
+    if delta_team_total_dist > capture_threshold:
+        capture_bonus -= 1.0  # big penalty if we get hit hard
+
+    shaping = basic_progress + capture_bonus
+
+    # safety clipping to keep per-step shaping bounded
+    shaping = max(min(shaping, 2.0), -2.0)
+
+    return shaping
 
 
 def team_progress(inner, team_indices) -> tuple[float, float, float]:
@@ -317,9 +360,6 @@ for ep in range(NUM_EPISODES):
                 for aid in legal_ids
             ]
 
-            # potential BEFORE
-            phi_before = potential(inner_before, agent_team, snapshot_team)
-
             idx, chosen_feat, logp, value = agent.select_action(
                 obs, legal_act_feats, eval_mode=False
             )
@@ -330,14 +370,14 @@ for ep in range(NUM_EPISODES):
             state_after = env.get_state
             inner_after = state_after._inner
 
-            # potential AFTER
-            phi_after = potential(inner_after, agent_team, snapshot_team)
-
-            progress_reward = phi_after - phi_before
+            # event-style shaping: our progress vs opponent + capture-like jumps
+            SHAPING_SCALE = 1.0  # start with 1.0, you can tune later
+            shaping = compute_shaping(
+                inner_before, inner_after, agent_team, snapshot_team
+            )
 
             env_reward = next_time_step.rewards[current_player]
-            SHAPING_SCALE = 0.5  # try 0.5, then tune
-            r = env_reward + SHAPING_SCALE * progress_reward
+            r = env_reward + SHAPING_SCALE * shaping
             d = next_time_step.last()
 
             agent.store_step(
