@@ -2,6 +2,7 @@
 # Self-play training: agent team vs league of frozen snapshot teams.
 # Latest snapshot is periodically updated to current agent and added to a league.
 # Progress is monitored only vs a frozen baseline agent.
+# Reward shaping uses value-net potential: V(s') - V(s).
 
 import os
 import random
@@ -40,6 +41,10 @@ PPO_MINIBATCH_SIZE = 512
 MAX_LEAGUE_SIZE = 5
 SNAPSHOT_UPDATE_EVERY_EP = 100  # how often to update latest snapshot + league
 SNAPSHOT_ADD_PERIOD = 5  # add frozen snapshot to league every N snapshot updates
+
+# value-based shaping strength
+SHAPING_SCALE = 1.0  # α in r' = r_env + α*(V(s') - V(s))
+OUTCOME_BONUS = 3.0  # terminal win/loss bonus
 
 # --------------------------------------------------
 # env / game setup
@@ -139,67 +144,6 @@ else:
 # --------------------------------------------------
 # helpers
 # --------------------------------------------------
-
-
-def compute_shaping(
-    inner_before, inner_after, agent_team_indices, opp_team_indices
-) -> float:
-    """
-    Shaping based on team vs opponent progress and big 'capture-like' jumps.
-    """
-    board = inner_after.board  # same board object before/after
-
-    # our team before/after
-    ft_b, ht_b, dt_b = team_progress(inner_before, agent_team_indices)
-    ft_a, ht_a, dt_a = team_progress(inner_after, agent_team_indices)
-
-    # opponent team before/after
-    fo_b, ho_b, do_b = team_progress(inner_before, opp_team_indices)
-    fo_a, ho_a, do_a = team_progress(inner_after, opp_team_indices)
-
-    NUM_FIELDS = board.NUM_FIELDS
-    norm_dist = NUM_FIELDS * 8.0
-
-    # distances: smaller is better (closer to home)
-    # positive dd_team means we got closer; positive dd_opp means opponent got closer
-    dd_team = dt_b - dt_a
-    dd_opp = do_b - do_a
-
-    # basic progress:
-    #   + we finish / reach home
-    #   - opponent finishes / reaches home
-    #   + we get closer
-    #   - opponent gets closer
-    basic_progress = (
-        0.6 * (ft_a - ft_b)  # finished marbles, strong
-        + 0.15 * (ht_a - ht_b)  # home-row marbles, moderate
-        + 0.4 * (dd_team / norm_dist)
-        - 0.6 * (fo_a - fo_b)
-        - 0.15 * (ho_a - ho_b)
-        - 0.4 * (dd_opp / norm_dist)
-    )
-
-    # capture-like events:
-    # if opponent total distance suddenly increases a lot, we probably sent something far back
-    capture_bonus = 0.0
-    delta_opp_total_dist = do_a - do_b  # >0 if opp got further away overall
-    delta_team_total_dist = dt_a - dt_b  # >0 if we got further away overall
-
-    # heuristic thresholds: half a board worth of increase in summed distance
-    capture_threshold = NUM_FIELDS * 0.5
-
-    if delta_opp_total_dist > capture_threshold:
-        capture_bonus += 1.0  # big reward for hitting opponent hard
-
-    if delta_team_total_dist > capture_threshold:
-        capture_bonus -= 1.0  # big penalty if we get hit hard
-
-    shaping = basic_progress + capture_bonus
-
-    # safety clipping to keep per-step shaping bounded
-    shaping = max(min(shaping, 2.0), -2.0)
-
-    return shaping
 
 
 def team_progress(inner, team_indices) -> tuple[float, float, float]:
@@ -345,7 +289,6 @@ for ep in range(NUM_EPISODES):
     while not time_step.last():
         current_player = time_step.observations["current_player"]
         state_before = env.get_state
-        inner_before = state_before._inner
 
         if current_player in agent_team:
             # agent-controlled players (for this episode)
@@ -360,21 +303,28 @@ for ep in range(NUM_EPISODES):
                 for aid in legal_ids
             ]
 
-            idx, chosen_feat, logp, value = agent.select_action(
+            # select action, get value(s) from critic as V(s)
+            idx, chosen_feat, logp, value_before = agent.select_action(
                 obs, legal_act_feats, eval_mode=False
             )
             chosen_id = legal_ids[idx]
 
             next_time_step = env.step([chosen_id])
 
-            state_after = env.get_state
-            inner_after = state_after._inner
-
-            # event-style shaping: our progress vs opponent + capture-like jumps
-            SHAPING_SCALE = 1.0  # start with 1.0, you can tune later
-            shaping = compute_shaping(
-                inner_before, inner_after, agent_team, snapshot_team
+            # value-based shaping: V(s') - V(s) using value_net
+            # s: obs from current_player before move
+            # s': next_obs from same player's perspective after move
+            next_obs = np.array(
+                next_time_step.observations["info_state"][current_player],
+                dtype=np.float32,
             )
+            with torch.no_grad():
+                next_obs_t = (
+                    torch.from_numpy(next_obs).float().to(agent.device).unsqueeze(0)
+                )
+                value_after = agent.value_net(next_obs_t).item()
+
+            shaping = value_after - value_before
 
             env_reward = next_time_step.rewards[current_player]
             r = env_reward + SHAPING_SCALE * shaping
@@ -385,7 +335,7 @@ for ep in range(NUM_EPISODES):
                 legal_act_feats=legal_act_feats,
                 action_idx=idx,
                 logp=logp,
-                value=value,
+                value=value_before,
                 reward=r,
                 done=d,
             )
@@ -430,7 +380,6 @@ for ep in range(NUM_EPISODES):
             outcome = -1.0
             losses += 1
 
-    OUTCOME_BONUS = 3.0
     if agent.current_episode:
         agent.current_episode[-1].reward += OUTCOME_BONUS * outcome
         agent.current_episode[-1].done = True
