@@ -23,10 +23,17 @@ class StepRecord:
     done: bool  # episode done
 
 
+def orthogonal_init(module: nn.Module, gain: float = 1.0):
+    if isinstance(module, nn.Linear):
+        nn.init.orthogonal_(module.weight, gain=gain)
+        if module.bias is not None:
+            nn.init.constant_(module.bias, 0.0)
+
+
 class ParamPolicyNet(nn.Module):
     def __init__(self, obs_dim: int, act_dim: int, hidden_sizes=(256, 256, 256)):
         super().__init__()
-        layers = []
+        layers: List[nn.Module] = []
         input_dim = obs_dim + act_dim
         for h in hidden_sizes:
             layers.append(nn.Linear(input_dim, h))
@@ -35,7 +42,18 @@ class ParamPolicyNet(nn.Module):
         layers.append(nn.Linear(input_dim, 1))  # scalar logit for (s,a)
         self.net = nn.Sequential(*layers)
 
+        # PPO-style orthogonal initialization: larger gain for hidden, small for last
+        self.net.apply(
+            lambda m: orthogonal_init(m, gain=nn.init.calculate_gain("relu"))
+        )
+        # last layer smaller gain
+        if isinstance(self.net[-1], nn.Linear):
+            nn.init.orthogonal_(self.net[-1].weight, gain=0.01)
+            if self.net[-1].bias is not None:
+                nn.init.constant_(self.net[-1].bias, 0.0)
+
     def forward(self, obs: torch.Tensor, act_feat: torch.Tensor) -> torch.Tensor:
+        # obs: [N, obs_dim], act_feat: [N, act_dim]
         x = torch.cat([obs, act_feat], dim=-1)
         return self.net(x)  # [N, 1]
 
@@ -43,7 +61,7 @@ class ParamPolicyNet(nn.Module):
 class ValueNet(nn.Module):
     def __init__(self, obs_dim: int, hidden_sizes=(256, 256, 256)):
         super().__init__()
-        layers = []
+        layers: List[nn.Module] = []
         input_dim = obs_dim
         for h in hidden_sizes:
             layers.append(nn.Linear(input_dim, h))
@@ -51,6 +69,14 @@ class ValueNet(nn.Module):
             input_dim = h
         layers.append(nn.Linear(input_dim, 1))
         self.net = nn.Sequential(*layers)
+
+        self.net.apply(
+            lambda m: orthogonal_init(m, gain=nn.init.calculate_gain("relu"))
+        )
+        if isinstance(self.net[-1], nn.Linear):
+            nn.init.orthogonal_(self.net[-1].weight, gain=1.0)
+            if self.net[-1].bias is not None:
+                nn.init.constant_(self.net[-1].bias, 0.0)
 
     def forward(self, obs: torch.Tensor) -> torch.Tensor:
         return self.net(obs)  # [N, 1]
@@ -61,15 +87,22 @@ class ParametricPPOAgent:
         self,
         obs_dim: int,
         act_dim: int,
-        lr: float = 3e-4,
+        # main aggression knobs (set from training script):
+        lr: float = 3e-4,  # higher = more aggressive updates
+        clip_eps: float = 0.2,  # larger = more aggressive policy change
+        entropy_coef: float = 0.01,  # larger = more exploration
+        # discounting / GAE:
         gamma: float = 0.99,
         gae_lambda: float = 0.95,
-        clip_eps: float = 0.2,
+        # loss weights:
         value_coef: float = 0.5,
-        entropy_coef: float = 0.01,
         max_grad_norm: float = 0.5,
+        # PPO loop:
         update_epochs: int = 4,
         minibatch_size: int = 256,
+        # value clipping (PPO-style for critic):
+        value_clip_eps: float = 0.2,
+        # network sizes:
         policy_hidden=(256, 256, 256),
         value_hidden=(256, 256, 256),
         device: str | None = None,
@@ -84,6 +117,7 @@ class ParametricPPOAgent:
         self.max_grad_norm = max_grad_norm
         self.update_epochs = update_epochs
         self.minibatch_size = minibatch_size
+        self.value_clip_eps = value_clip_eps
 
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -92,6 +126,7 @@ class ParametricPPOAgent:
         )
         self.value_net = ValueNet(obs_dim, hidden_sizes=value_hidden).to(self.device)
 
+        # single optimizer for both policy and value
         self.optimizer = optim.Adam(
             list(self.policy.parameters()) + list(self.value_net.parameters()),
             lr=lr,
@@ -204,7 +239,6 @@ class ParametricPPOAgent:
         if not self.buffer:
             return
 
-        # convert lists to numpy / tensors as needed
         N = len(self.buffer)
         advantages = np.array(self.buffer_advantages, dtype=np.float32)
         returns = np.array(self.buffer_returns, dtype=np.float32)
@@ -217,6 +251,7 @@ class ParametricPPOAgent:
         indices = list(range(N))
 
         for _ in range(self.update_epochs):
+            random.shuffle(indices)
             for mb_idx in self._iterate_minibatches(indices):
                 if not mb_idx:
                     continue
@@ -234,19 +269,23 @@ class ParametricPPOAgent:
                     device=self.device,
                 )
 
+                old_values_t = torch.tensor(
+                    [self.buffer[i].value for i in mb_idx],
+                    dtype=torch.float32,
+                    device=self.device,
+                )
+
                 # compute new log probs and entropy sample-wise (variable-length legal sets)
                 logp_new_list = []
                 entropy_list = []
 
-                for j, idx in enumerate(mb_idx):
-                    step = self.buffer[idx]
+                for j, idx_sample in enumerate(mb_idx):
+                    step = self.buffer[idx_sample]
                     legal_feats = step.legal_act_feats  # [A, act_dim]
                     act_idx = step.action_idx
 
                     legal_t = torch.from_numpy(legal_feats).float().to(self.device)
-                    obs_single = (
-                        obs_t[j].unsqueeze(0).repeat(legal_t.shape[0], 1)
-                    )  # [A, obs_dim]
+                    obs_single = obs_t[j].unsqueeze(0).repeat(legal_t.shape[0], 1)
 
                     logits = self.policy(obs_single, legal_t).squeeze(1)  # [A]
                     dist = torch.distributions.Categorical(logits=logits)
@@ -270,9 +309,19 @@ class ParametricPPOAgent:
                 )
                 policy_loss = -torch.min(surr1, surr2).mean()
 
-                # value loss
+                # value loss with clipping (PPO-style critic clip)
                 values_pred = self.value_net(obs_t).squeeze(1)  # [B]
-                value_loss = 0.5 * (ret_t - values_pred).pow(2).mean()
+                if self.value_clip_eps is not None and self.value_clip_eps > 0.0:
+                    values_clipped = old_values_t + (values_pred - old_values_t).clamp(
+                        -self.value_clip_eps, self.value_clip_eps
+                    )
+                    value_loss_unclipped = (values_pred - ret_t).pow(2)
+                    value_loss_clipped = (values_clipped - ret_t).pow(2)
+                    value_loss = (
+                        0.5 * torch.max(value_loss_unclipped, value_loss_clipped).mean()
+                    )
+                else:
+                    value_loss = 0.5 * (ret_t - values_pred).pow(2).mean()
 
                 loss = (
                     policy_loss

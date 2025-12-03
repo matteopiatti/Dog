@@ -31,9 +31,9 @@ EVAL_BASELINE_EVERY_EP = 1000  # how often to evaluate vs baseline
 EVAL_EPISODES = 50  # games per eval vs baseline
 
 # PPO hyperparameters (must match between agent and snapshots)
-PPO_LR = 1e-4
-PPO_CLIP_EPS = 0.1
-PPO_ENTROPY_COEF = 0.02
+PPO_LR = 5e-4
+PPO_CLIP_EPS = 0.15
+PPO_ENTROPY_COEF = 0.05
 PPO_UPDATE_EPOCHS = 6
 PPO_MINIBATCH_SIZE = 512
 
